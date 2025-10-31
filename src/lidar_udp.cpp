@@ -2,7 +2,7 @@
  Copyright (c) 2020-2024, Unitree Robotics.Co.Ltd. All rights reserved.
 ***********************************************************************/
 
-#include "example.h"
+#include "unitree_lidar.h"
 
 int main(int argc, char *argv[])
 {
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     sleep(1);
 
     // Process
-    exampleProcess(lreader);
+    run(lreader);
     
     return 0;
 }
