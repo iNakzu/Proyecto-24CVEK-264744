@@ -8,7 +8,7 @@
 
 using namespace unilidar_sdk2;
 
-void exampleProcess(UnitreeLidarReader *lreader){
+void run(UnitreeLidarReader *lreader){
 
     // Get lidar version
     std::string versionSDK;
