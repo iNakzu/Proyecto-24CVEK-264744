@@ -24,7 +24,7 @@ void run(UnitreeLidarReader *lreader){
     std::cout << "lidar hardware version = " << versionHardware << std::endl
               << "lidar firmware version = " << versionFirmware << std::endl
               << "lidar sdk version = " << versionSDK << std::endl;
-    sleep(1);
+    // sleep(1);
 
     // Stop and start lidar again
     std::cout << "stop lidar rotation ..." << std::endl;
