@@ -18,26 +18,22 @@ int main(int argc, char *argv[])
 
     if (lreader->initializeUDP(lidar_port, lidar_ip, local_port, local_ip))
     {
-        printf("Unilidar initialization failed! Exit here!\n");
+        // printf("Unilidar initialization failed! Exit here!\n");
         exit(-1);
     }
     else
     {
-        printf("Unilidar initialization succeed!\n");
+        // printf("Unilidar initialization succeed!\n");
     }
 
     lreader->startLidarRotation();
-    sleep(1);
 
     // Set lidar work mode
     uint32_t workMode = 0;
-    std::cout << "set Lidar work mode to: " << workMode << std::endl;
     lreader->setLidarWorkMode(workMode);
-    sleep(1);
     
     // Reset Lidar
     lreader->resetLidar();
-    sleep(1);
 
     // Process
     run(lreader);

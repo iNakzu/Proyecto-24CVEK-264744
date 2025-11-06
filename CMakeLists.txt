@@ -14,6 +14,6 @@ SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib/${CMAKE_SYSTEM_PROCESSOR})
 
 add_executable(lidar_udp
-  examples/lidar_udp.cpp
+  src/lidar_udp.cpp
 )
 target_link_libraries(lidar_udp  libunilidar_sdk2.a )

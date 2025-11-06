@@ -8,7 +8,7 @@ import os
 import sys
 import signal
 
-BIN_PATH = "./bin/example_lidar_udp"
+BIN_PATH = "./bin/lidar_udp"
 # Para extraer puntos de la nube lidar (x, y, z, intensity, time, ring)
 REGEX_POINT = r'\(\s*(-?\d+\.\d+),\s*(-?\d+\.\d+),\s*(-?\d+\.\d+),\s*(-?\d+\.\d+),\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)\)'
 
