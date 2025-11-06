@@ -35,12 +35,13 @@ python3 --version
 pip3 --version
 ```
 
-### 2. Instalar cmake, open3d y build-essentials
-
+### 2. Instalar cmake, open3d, build-essentials y matplotlib            
+ 
 ```bash
 sudo apt install cmake
 sudo apt install build-essential
 pip install open3d
+pip install matplotlib
 ```
 ---
 
