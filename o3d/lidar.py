@@ -16,7 +16,7 @@ DURACION_CAPTURA = 30        # segundos (temporal para debug)
 DIST_MIN = 0                    # metros (distancia mínima)
 DIST_MAX = 1                    # metros (0 = sin límite máximo, usar cualquier valor > 0 para limitar)
 POINT_SIZE = 2                  # tamaño de punto en el visualizador
-SAVE_DIR = datetime.now().strftime("./ply/%y-%m-%d")  # carpeta donde guardar el .ply
+SAVE_DIR = datetime.now().strftime("./pcd/%y-%m-%d")  # carpeta donde guardar el .ply
 MIN_PERSISTENCE = 5            # segundos mínimos que un punto debe persistir
 NEIGHBORS = 20                  # vecinos necesarios para que un punto se muestre
 
