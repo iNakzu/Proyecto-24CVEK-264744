@@ -8,27 +8,22 @@ import os
 import sys
 import signal
 
-BIN_PATH = "./unitree_lidar_sdk/bin/example_lidar_udp"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SDK_DIR = os.path.dirname(SCRIPT_DIR)  # Directorio padre (sdk/)
+BIN_PATH = os.path.join(SDK_DIR, "unitree_lidar_sdk/bin/example_lidar_udp")
 
 # Para extraer puntos de la nube lidar (x, y, z, intensity, time, ring)
+# Permite números con o sin punto decimal (ej: 1.5 o 0 o -1)
 REGEX_POINT = r'\(\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*)\)'
 
-
-DURACION_CAPTURA = 10        # segundos (temporal para debug)
+DURACION_CAPTURA = 15        # segundos (temporal para debug)
 DIST_MIN = 0                    # metros (distancia mínima)
-DIST_MAX = 0                   # metros (0 = sin límite máximo, usar cualquier valor > 0 para limitar)
+DIST_MAX = 1.5                    # metros (0 = sin límite máximo, usar cualquier valor > 0 para limitar)
 POINT_SIZE = 2                  # tamaño de punto en el visualizador
-SAVE_DIR = datetime.now().strftime("./pcd/%Y-%m-%d")  # carpeta donde guardar el .ply
-MIN_PERSISTENCE = 3            # segundos mínimos que un punto debe persistir
-ANGLE = 40                      # angulo en grados (180 para capturar medio hemisferio)
-
-# FILTROS DE SUAVIZADO (Activar/desactivar para comparar)
-APPLY_SMOOTHING = True         # True = aplicar filtros, False = sin filtros (nube cruda)
-VOXEL_SIZE = 0.005             # tamaño del voxel (5mm) - reduce para más densidad, aumenta para más suavizado
-STATISTICAL_NEIGHBORS = 15     # vecinos para filtro estadístico (menos = más permisivo)
-STATISTICAL_STD_RATIO = 1.5    # ratio de desviación estándar (más alto = más permisivo)
-USE_PLANE_FITTING = False      # NO usar para captura de habitación completa
-PLANE_THRESHOLD = 0.02         # distancia máxima al plano (metros)
+SAVE_DIR = os.path.join(SDK_DIR, datetime.now().strftime("open3d/%Y-%m-%d"))  # carpeta donde guardar el .ply
+MIN_PERSISTENCE = 10            # segundos mínimos que un punto debe persistir
+ANGLE = 45                      # angulo en grados (180 para capturar medio hemisferio)
+NEIGHBORS = 20                  # vecinos necesarios para que un punto se muestre
 
 # DIRECCIÓN DE CAPTURA:
 # - (0, 0, 0) = TODAS las direcciones (captura 360°, sin filtro angular)
@@ -149,34 +144,8 @@ def visualize_and_save_pcd(xyz, colors, save_dir, point_size=4):
     pcd.points = o3d.utility.Vector3dVector(xyz)
     pcd.colors = o3d.utility.Vector3dVector(colors)
 
-    if APPLY_SMOOTHING:
-        print("=== Aplicando filtros de suavizado ===")
-        
-        # 1. Downsampling con voxel (reduce densidad y suaviza)
-        if VOXEL_SIZE > 0:
-            print(f"Aplicando voxel downsampling ({VOXEL_SIZE}m)...")
-            pcd = pcd.voxel_down_sample(voxel_size=VOXEL_SIZE)
-
-        # 2. Filtro estadístico (elimina puntos aislados)
-        print(f"Eliminando outliers estadísticos (neighbors={STATISTICAL_NEIGHBORS}, std_ratio={STATISTICAL_STD_RATIO})...")
-        pcd, _ = pcd.remove_statistical_outlier(nb_neighbors=STATISTICAL_NEIGHBORS, std_ratio=STATISTICAL_STD_RATIO)
-
-        # 3. Ajuste a plano (opcional, para superficies planas)
-        if USE_PLANE_FITTING:
-            print("Detectando y ajustando al plano...")
-            plane_model, inliers = pcd.segment_plane(
-                distance_threshold=PLANE_THRESHOLD,
-                ransac_n=3,
-                num_iterations=1000
-            )
-            if len(inliers) > 0:
-                # Mantener solo puntos del plano
-                pcd = pcd.select_by_index(inliers)
-                print(f"Plano detectado: {plane_model[:3]} | Puntos en plano: {len(inliers)}")
-        
-        print(f"Puntos después de filtros: {len(pcd.points)}")
-    else:
-        print("=== Filtros de suavizado DESACTIVADOS (nube cruda) ===")
+    # Filtro estadístico (elimina puntos aislados)
+    pcd, _ = pcd.remove_statistical_outlier(nb_neighbors=NEIGHBORS, std_ratio=1.0)
 
     # Visualizar
     vis = o3d.visualization.Visualizer()
