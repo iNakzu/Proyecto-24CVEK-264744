@@ -108,14 +108,13 @@ class WorkerCorte(QThread):
     # Modificamos la señal para enviar un diccionario (object) con las rutas
     finished = pyqtSignal(object) 
     
-    def __init__(self, archivo_ref, archivos_target, config):
+    def __init__(self, archivo_ref, archivos_target):
         super().__init__()
         self.archivo_ref = archivo_ref
         self.archivos_target = archivos_target
-        self.config = config
 
     def run(self):
-        cortador = cortar.CortadorVisualMultiple(self.config)
+        cortador = cortar.CortadorVisualMultiple()
         # Capturamos el return del script cortar.py
         resultados = cortador.procesar(self.archivo_ref, self.archivos_target)
         # Emitimos los resultados al terminar
@@ -348,7 +347,6 @@ class TabCorte(QWidget):
         super().__init__()
         self.ruta_ref = None
         self.rutas_target = []
-        self.config = cortar.CONFIGURACION.copy()
         self.init_ui()
 
     def init_ui(self):
@@ -410,7 +408,7 @@ class TabCorte(QWidget):
         self.btn_run.setEnabled(False)
         self.console.append("⏳ Iniciando corte...")
         
-        self.worker = WorkerCorte(self.ruta_ref, self.rutas_target, self.config)
+        self.worker = WorkerCorte(self.ruta_ref, self.rutas_target)
         # Conectar la señal de finalización a nuestra función local
         self.worker.finished.connect(self.on_worker_finished)
         self.worker.start()
