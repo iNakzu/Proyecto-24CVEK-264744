@@ -2,11 +2,11 @@ import sys
 import os
 import numpy as np
 import open3d as o3d
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPushButton, QLabel, QFileDialog, 
                              QTextEdit, QGroupBox, QMessageBox, QTabWidget,
                              QSpinBox, QDoubleSpinBox, QLineEdit, QGridLayout)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QObject
 import subprocess
 import signal
 
