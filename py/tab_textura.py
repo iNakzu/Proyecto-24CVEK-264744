@@ -118,11 +118,7 @@ class TabTextura(QWidget):
         self.btn_run.setEnabled(False)
         layout.addWidget(self.btn_run)
         
-        self.log_area = QTextEdit()
-        self.log_area.setReadOnly(True)
-        self.log_area.setStyleSheet("background-color: #222; color: #0f0; font-family: monospace;")
-        layout.addWidget(self.log_area)
-        
+        # Botones de resultado (arriba del log)
         h_res = QHBoxLayout()
         self.btn_view = QPushButton("Visualizar 3D")
         self.btn_view.clicked.connect(self.visualize)
@@ -133,6 +129,11 @@ class TabTextura(QWidget):
         h_res.addWidget(self.btn_view)
         h_res.addWidget(self.btn_save)
         layout.addLayout(h_res)
+        
+        self.log_area = QTextEdit()
+        self.log_area.setReadOnly(True)
+        self.log_area.setStyleSheet("background-color: #222; color: #0f0; font-family: monospace;")
+        layout.addWidget(self.log_area)
 
     def load_pcd(self):
         f, _ = QFileDialog.getOpenFileName(self, "Nube", "", "PLY (*.ply)")

@@ -236,6 +236,12 @@ class TabCorte(QWidget):
         self.lbl_ref_status.setStyleSheet("color: gray")
         l_3d.addWidget(self.btn_load_ref)
         l_3d.addWidget(self.lbl_ref_status)
+        
+        # Label para mostrar archivo guardado
+        self.lbl_saved_file = QLabel("")
+        self.lbl_saved_file.setStyleSheet("color: white; font-size: 10px;")
+        self.lbl_saved_file.setWordWrap(True)
+        l_3d.addWidget(self.lbl_saved_file)
 
         self.btn_batch = QPushButton("2. Aplicar Región a Múltiples Archivos")
         self.btn_batch.clicked.connect(self.procesar_lote)
@@ -279,13 +285,14 @@ class TabCorte(QWidget):
                 self.ruta_ref = f
                 dims = coord['dimensiones_cm']
                 self.lbl_ref_status.setText(f"Región: {dims['largo_y']:.1f} x {dims['alto_z']:.1f} cm\n(Profundidad: {coord['profundidad']}m)")
-                self.lbl_ref_status.setStyleSheet("color: green; font-weight: bold")
+                self.lbl_ref_status.setStyleSheet("color: white; font-weight: bold")
                 self.btn_batch.setEnabled(True)
                 
                 if QMessageBox.question(self, "Guardar", "¿Guardar recorte de referencia?") == QMessageBox.StandardButton.Yes:
                     pcd_recorte = Logic3D.aplicar_corte(pcd, coord)
                     saved = self._guardar_pcd(pcd_recorte, f, dims)
                     self.archivo_ref_path = saved
+                    self.lbl_saved_file.setText(f"📁 Guardado en:\n{saved}")
 
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
@@ -295,8 +302,10 @@ class TabCorte(QWidget):
         if not files: return
         
         self.list_results.clear()
+        self.lbl_saved_file.clear()
         dims = self.coordenadas_corte['dimensiones_cm']
         archivos_procesados = []
+        saved_paths_text = "📁 Archivos guardados:\n"
         
         for f in files:
             try:
@@ -307,6 +316,7 @@ class TabCorte(QWidget):
                     saved_path = self._guardar_pcd(recorte, f, dims)
                     self.list_results.addItem(f"✅ {os.path.basename(saved_path)}")
                     archivos_procesados.append(saved_path)
+                    saved_paths_text += f"{saved_path}\n"
                 else:
                     self.list_results.addItem(f"⚠ {os.path.basename(f)} (Vacío)")
             except Exception as e:
@@ -315,6 +325,7 @@ class TabCorte(QWidget):
         if self.archivo_ref_path and archivos_procesados:
             resultados = {'ref': self.archivo_ref_path, 'targets': archivos_procesados}
             self.archivos_generados.emit(resultados)
+            self.lbl_saved_file.setText(saved_paths_text)
 
     def _guardar_pcd(self, pcd, original_path, dims):
         folder = os.path.dirname(original_path)

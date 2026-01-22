@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QPushButton,
 from PyQt6.QtCore import QThread, pyqtSignal
 
 # ==============================================================================
-# 🔧 LÓGICA DE CAPTURA LIDAR (Integrada)
+# �� LÓGICA DE CAPTURA LIDAR (Integrada)
 # ==============================================================================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SDK_DIR = os.path.dirname(SCRIPT_DIR)
@@ -31,7 +31,7 @@ DIR_X = 1
 DIR_Y = 0
 DIR_Z = 0
 
-def run_lidar_and_collect_points(duration_sec):
+def run_lidar_and_collect_points(duration_sec, stop_callback=None):
     """Lanza el binario del LiDAR y devuelve una lista de puntos."""
     if not os.path.isfile(BIN_PATH):
         print(f"ERROR: no se encontró el ejecutable en: {BIN_PATH}")
@@ -57,11 +57,19 @@ def run_lidar_and_collect_points(duration_sec):
 
     tiempo_inicio = time.time()
     contador_puntos = 0
+    lineas_leidas = 0
 
     try:
         for line in process.stdout:
+            # Verificar si se solicitó detener
+            if stop_callback and stop_callback():
+                print("\n⏹️ Captura detenida por el usuario.")
+                break
+                
             line = line.strip()
             now = time.time()
+            lineas_leidas += 1
+            
             tiempo_transcurrido = now - tiempo_inicio
             tiempo_restante = max(0, duration_sec - tiempo_transcurrido)
 
@@ -80,7 +88,10 @@ def run_lidar_and_collect_points(duration_sec):
     finally:
         terminate_process()
 
-    process.communicate(timeout=1)
+    _, err = process.communicate(timeout=1)
+    if err:
+        pass
+
     return all_points
 
 def filter_points_by_distance(points_xyz, points_intensity, dist_min, dist_max):
@@ -132,11 +143,16 @@ def visualize_and_save_pcd(xyz, colors, save_dir, point_size=4):
     o3d.io.write_point_cloud(ply_filename, pcd)
     print(f"Nube de puntos guardada como {ply_filename}")
 
-def main_captura():
+def main_captura(stop_callback=None):
     """Función principal de captura"""
-    save_dir = os.path.join(SDK_DIR, datetime.now().strftime("open3d/%Y-%m-%d"))
+    save_dir = os.path.join(SDK_DIR, datetime.now().strftime("pcd/%Y-%m-%d"))
     
-    all_points = run_lidar_and_collect_points(DURACION_CAPTURA)
+    all_points = run_lidar_and_collect_points(DURACION_CAPTURA, stop_callback)
+
+    # Verificar si se canceló la captura
+    if stop_callback and stop_callback():
+        print("❌ Captura cancelada. No se procesarán ni guardarán los puntos.")
+        return
 
     if not all_points:
         print("No se acumularon puntos.")
@@ -145,6 +161,8 @@ def main_captura():
     arr = np.array(all_points)
     xyz = arr[:, :3]
     intensity = arr[:, 3]
+    lidar_time = arr[:, 4]
+    ring = arr[:, 5]
     times = arr[:, 6]
 
     if DIST_MAX > 0:
@@ -172,12 +190,25 @@ def main_captura():
 # ==============================================================================
 class CapturaOutputRedirector:
     """Redirige la salida de print() a una señal de Qt"""
-    def __init__(self, signal):
+    def __init__(self, signal, update_signal):
         self.signal = signal
+        self.update_signal = update_signal
+        self.last_was_progress = False
     
     def write(self, text):
-        if text.strip():
+        if not text.strip():
+            return
+        
+        if text.startswith('\r') or 'Puntos capturados:' in text:
+            clean_text = text.replace('\r', '').strip()
+            if clean_text:
+                self.update_signal.emit(clean_text)
+                self.last_was_progress = True
+        else:
+            if self.last_was_progress and text.strip():
+                self.signal.emit('')
             self.signal.emit(text)
+            self.last_was_progress = False
     
     def flush(self):
         pass
@@ -185,39 +216,47 @@ class CapturaOutputRedirector:
 class WorkerCaptura(QThread):
     finished = pyqtSignal()
     log_signal = pyqtSignal(str)
+    progress_signal = pyqtSignal(str)
     
     def __init__(self, params):
         super().__init__()
         self.params = params
+        self._stop_requested = False
+
+    def request_stop(self):
+        """Solicita la detención de la captura"""
+        self._stop_requested = True
+    
+    def should_stop(self):
+        """Verifica si se solicitó detener"""
+        return self._stop_requested
 
     def run(self):
+        global DURACION_CAPTURA, DIST_MIN, DIST_MAX, POINT_SIZE, MIN_PERSISTENCE
+        global ANGLE, NEIGHBORS, DIR_X, DIR_Y, DIR_Z
+        
         original_stdout = sys.stdout
         original_stderr = sys.stderr
         
         try:
-            # Configurar variables globales del módulo
-            global DURACION_CAPTURA, DIST_MIN, DIST_MAX, POINT_SIZE, MIN_PERSISTENCE
-            global ANGLE, NEIGHBORS, DIR_X, DIR_Y, DIR_Z
+            sys.stdout = CapturaOutputRedirector(self.log_signal, self.progress_signal)
+            sys.stderr = CapturaOutputRedirector(self.log_signal, self.progress_signal)
             
             DURACION_CAPTURA = self.params['duracion']
             DIST_MIN = self.params['dist_min']
             DIST_MAX = self.params['dist_max']
             POINT_SIZE = self.params['point_size']
-            MIN_PERSISTENCE = self.params['min_persistence']
+            MIN_PERSISTENCE = self.params['persistence']
             ANGLE = self.params['angle']
             NEIGHBORS = self.params['neighbors']
             DIR_X = self.params['dir_x']
             DIR_Y = self.params['dir_y']
             DIR_Z = self.params['dir_z']
             
-            redirector = CapturaOutputRedirector(self.log_signal)
-            sys.stdout = redirector
-            sys.stderr = redirector
-            
-            main_captura() 
+            main_captura(stop_callback=self.should_stop)
             
         except Exception as e:
-            self.log_signal.emit(f"❌ Error durante la captura: {str(e)}")
+            self.log_signal.emit(f"❌ Error durante captura: {str(e)}")
         finally:
             sys.stdout = original_stdout
             sys.stderr = original_stderr
@@ -258,72 +297,82 @@ class TabCaptura(QWidget):
         self.spin_dist_max.setDecimals(2)
         grid.addWidget(self.spin_dist_max, 2, 1)
         
-        grid.addWidget(QLabel("Tamaño de Punto:"), 3, 0)
-        self.spin_point_size = QSpinBox()
-        self.spin_point_size.setRange(1, 20)
-        self.spin_point_size.setValue(2)
-        grid.addWidget(self.spin_point_size, 3, 1)
-        
-        grid.addWidget(QLabel("Persistencia Mínima (s):"), 4, 0)
+        grid.addWidget(QLabel("Persistencia Mínima (s):"), 3, 0)
         self.spin_persistence = QSpinBox()
         self.spin_persistence.setRange(0, 3600)
         self.spin_persistence.setValue(10)
-        grid.addWidget(self.spin_persistence, 4, 1)
+        grid.addWidget(self.spin_persistence, 3, 1)
         
-        grid.addWidget(QLabel("Ángulo (grados):"), 5, 0)
+        grid.addWidget(QLabel("Ángulo (grados):"), 4, 0)
         self.spin_angle = QSpinBox()
         self.spin_angle.setRange(0, 180)
         self.spin_angle.setValue(45)
-        grid.addWidget(self.spin_angle, 5, 1)
+        grid.addWidget(self.spin_angle, 4, 1)
         
-        grid.addWidget(QLabel("Vecinos (filtro):"), 6, 0)
+        grid.addWidget(QLabel("Vecinos (filtro):"), 5, 0)
         self.spin_neighbors = QSpinBox()
         self.spin_neighbors.setRange(1, 100)
         self.spin_neighbors.setValue(20)
-        grid.addWidget(self.spin_neighbors, 6, 1)
+        grid.addWidget(self.spin_neighbors, 5, 1)
         
-        grid.addWidget(QLabel("Dirección X:"), 7, 0)
+        # Controles de dirección ocultos
         self.spin_dir_x = QSpinBox()
-        self.spin_dir_x.setRange(-10, 10)
+        self.spin_dir_x.setRange(0, 1)
         self.spin_dir_x.setValue(1)
-        grid.addWidget(self.spin_dir_x, 7, 1)
+        self.spin_dir_x.setVisible(False)
         
-        grid.addWidget(QLabel("Dirección Y:"), 8, 0)
         self.spin_dir_y = QSpinBox()
-        self.spin_dir_y.setRange(-10, 10)
+        self.spin_dir_y.setRange(0, 1)
         self.spin_dir_y.setValue(0)
-        grid.addWidget(self.spin_dir_y, 8, 1)
+        self.spin_dir_y.setVisible(False)
         
-        grid.addWidget(QLabel("Dirección Z:"), 9, 0)
         self.spin_dir_z = QSpinBox()
-        self.spin_dir_z.setRange(-10, 10)
+        self.spin_dir_z.setRange(0, 1)
         self.spin_dir_z.setValue(0)
-        grid.addWidget(self.spin_dir_z, 9, 1)
+        self.spin_dir_z.setVisible(False)
         
         grp_params.setLayout(grid)
         layout.addWidget(grp_params)
         
-        self.btn_capturar = QPushButton("📡 INICIAR CAPTURA")
-        self.btn_capturar.setStyleSheet("background-color: #d9534f; color: white; padding: 15px; font-weight: bold; font-size: 14px;")
-        self.btn_capturar.clicked.connect(self.run_captura)
+        # Botón de captura
+        self.btn_capturar = QPushButton("▶️ Iniciar Captura LiDAR")
+        self.btn_capturar.clicked.connect(self.toggle_captura)
         layout.addWidget(self.btn_capturar)
         
-        self.console = QTextEdit()
-        self.console.setReadOnly(True)
-        self.console.setStyleSheet("background-color: #000; color: #0f0; font-family: Consolas;")
-        layout.addWidget(self.console)
-
-    def run_captura(self):
-        self.console.clear()
-        self.btn_capturar.setEnabled(False)
-        self.btn_capturar.setText("⏳ Capturando...")
+        # Log de salida
+        grp_log = QGroupBox("📋 Log de Captura")
+        log_layout = QVBoxLayout()
+        self.text_log = QTextEdit()
+        self.text_log.setReadOnly(True)
+        log_layout.addWidget(self.text_log)
         
+        # Label para mostrar progreso dinámico
+        self.label_progress = QLabel("")
+        self.label_progress.setStyleSheet("QLabel { font-weight: bold; color: white; padding: 5px; }")
+        log_layout.addWidget(self.label_progress)
+        
+        grp_log.setLayout(log_layout)
+        layout.addWidget(grp_log)
+
+    def toggle_captura(self):
+        """Inicia o detiene la captura según el estado actual"""
+        if self.worker and self.worker.isRunning():
+            # Detener captura
+            self.worker.request_stop()
+            self.text_log.append("⏹️ Deteniendo captura...")
+            self.label_progress.setText("⏹️ Deteniendo...")
+            self.btn_capturar.setEnabled(False)
+        else:
+            # Iniciar captura
+            self.run_captura()
+    
+    def run_captura(self):
         params = {
             'duracion': self.spin_duracion.value(),
             'dist_min': self.spin_dist_min.value(),
             'dist_max': self.spin_dist_max.value(),
-            'point_size': self.spin_point_size.value(),
-            'min_persistence': self.spin_persistence.value(),
+            'point_size': 2,
+            'persistence': self.spin_persistence.value(),
             'angle': self.spin_angle.value(),
             'neighbors': self.spin_neighbors.value(),
             'dir_x': self.spin_dir_x.value(),
@@ -331,12 +380,35 @@ class TabCaptura(QWidget):
             'dir_z': self.spin_dir_z.value()
         }
         
+        self.text_log.clear()
+        self.label_progress.clear()
+        self.text_log.append("🚀 Iniciando captura LiDAR...\n")
+        
+        # Cambiar botón a modo "Detener"
+        self.btn_capturar.setText("⏹️ Detener Captura")
+        self.btn_capturar.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
+        
         self.worker = WorkerCaptura(params)
-        self.worker.log_signal.connect(self.console.append)
+        self.worker.log_signal.connect(self.text_log.append)
+        self.worker.progress_signal.connect(self.update_progress)
         self.worker.finished.connect(self.on_captura_finished)
         self.worker.start()
+    
+    def update_progress(self, text):
+        """Actualiza el label de progreso sin agregar al log"""
+        self.label_progress.setText(text)
 
     def on_captura_finished(self):
+        # Verificar si fue cancelada
+        if self.worker and self.worker._stop_requested:
+            self.text_log.append("\n❌ Captura cancelada por el usuario.")
+            self.label_progress.setText("❌ Captura cancelada")
+        else:
+            self.text_log.append("\n✅ Captura finalizada.")
+            self.label_progress.setText("✅ Captura completada")
+            QMessageBox.information(self, "Captura completa", "La captura LiDAR ha finalizado correctamente.")
+        
+        # Restaurar botón a modo "Iniciar"
+        self.btn_capturar.setText("▶️ Iniciar Captura LiDAR")
+        self.btn_capturar.setStyleSheet("")
         self.btn_capturar.setEnabled(True)
-        self.btn_capturar.setText("📡 INICIAR CAPTURA")
-        QMessageBox.information(self, "Completado", "La captura ha finalizado correctamente")
