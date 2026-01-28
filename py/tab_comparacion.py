@@ -107,33 +107,42 @@ class TabComparacion(QWidget):
         l_files = QVBoxLayout()
         
         h1 = QHBoxLayout()
-        self.lbl_1 = QLabel("Nube Antes: ❌")
+        self.lbl_1 = QLabel("Nube Antes: -")
         btn_1 = QPushButton("Seleccionar 'Antes'")
         btn_1.clicked.connect(self.sel_1)
+        self.btn_clear_1 = QPushButton("❌")
+        self.btn_clear_1.setMaximumWidth(40)
+        self.btn_clear_1.clicked.connect(self.clear_1)
+        self.btn_clear_1.setEnabled(False)
         h1.addWidget(btn_1)
         h1.addWidget(self.lbl_1)
+        h1.addWidget(self.btn_clear_1)
         l_files.addLayout(h1)
         
         h2 = QHBoxLayout()
-        self.lbl_2 = QLabel("Nube Después: ❌")
+        self.lbl_2 = QLabel("Nube Después: -")
         btn_2 = QPushButton("Seleccionar 'Después'")
         btn_2.clicked.connect(self.sel_2)
+        self.btn_clear_2 = QPushButton("❌")
+        self.btn_clear_2.setMaximumWidth(40)
+        self.btn_clear_2.clicked.connect(self.clear_2)
+        self.btn_clear_2.setEnabled(False)
         h2.addWidget(btn_2)
         h2.addWidget(self.lbl_2)
+        h2.addWidget(self.btn_clear_2)
         l_files.addLayout(h2)
         
         grp.setLayout(l_files)
         layout.addWidget(grp)
         
-        self.btn_comp = QPushButton("📊 COMPARAR VISUAL Y ESTADÍSTICAMENTE")
-        self.btn_comp.setStyleSheet("background-color: #5cb85c; color: white; padding: 10px; font-weight: bold;")
+        self.btn_comp = QPushButton("Comparar Visual y Estadísticamente")
         self.btn_comp.setEnabled(False)
         self.btn_comp.clicked.connect(self.run_process)
         layout.addWidget(self.btn_comp)
         
+        layout.addWidget(QLabel("📋 Log:"))
         self.console = QTextEdit()
         self.console.setReadOnly(True)
-        self.console.setStyleSheet("background-color: #1e1e1e; color: #ffeb3b; font-family: Consolas;")
         layout.addWidget(self.console)
 
     def sel_1(self):
@@ -147,18 +156,32 @@ class TabComparacion(QWidget):
     def cargar_nube_1(self, ruta):
         self.ruta_1 = ruta
         self.lbl_1.setText(f"✅ {os.path.basename(ruta)}")
-        self.lbl_1.setStyleSheet("color: #5cb85c; font-weight: bold;")
+        self.btn_clear_1.setEnabled(True)
         self.check_ready()
 
     def cargar_nube_2(self, ruta):
         self.ruta_2 = ruta
         self.lbl_2.setText(f"✅ {os.path.basename(ruta)}")
-        self.lbl_2.setStyleSheet("color: #5cb85c; font-weight: bold;")
+        self.btn_clear_2.setEnabled(True)
+        self.check_ready()
+    
+    def clear_1(self):
+        self.ruta_1 = None
+        self.lbl_1.setText("Nube Antes: ❌")
+        self.btn_clear_1.setEnabled(False)
+        self.check_ready()
+    
+    def clear_2(self):
+        self.ruta_2 = None
+        self.lbl_2.setText("Nube Después: ❌")
+        self.btn_clear_2.setEnabled(False)
         self.check_ready()
 
     def check_ready(self):
         if self.ruta_1 and self.ruta_2:
             self.btn_comp.setEnabled(True)
+        else:
+            self.btn_comp.setEnabled(False)
 
     def run_process(self):
         self.console.clear()

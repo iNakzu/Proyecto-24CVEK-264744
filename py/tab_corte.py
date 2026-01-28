@@ -17,7 +17,7 @@ class EditorLibre:
         self.img_visual = None
         self.factor = 1.0
         self.center = None 
-        self.size = None   
+        self.size = 2   
         self.angle = 0.0
         self.active = False
         self.action = None
@@ -149,6 +149,7 @@ class Logic3D:
         vis = o3d.visualization.VisualizerWithEditing()
         vis.create_window(window_name="Seleccionar Puntos (SHIFT+Click)")
         vis.add_geometry(pcd)
+        vis.get_render_option().point_size = 2
         vis.run()
         vis.destroy_window()
         
@@ -239,7 +240,7 @@ class TabCorte(QWidget):
         
         # Label para mostrar archivo guardado
         self.lbl_saved_file = QLabel("")
-        self.lbl_saved_file.setStyleSheet("color: white; font-size: 10px;")
+        self.lbl_saved_file.setStyleSheet("color: #00AA00; font-size: 10px; font-weight: bold;")
         self.lbl_saved_file.setWordWrap(True)
         l_3d.addWidget(self.lbl_saved_file)
 
@@ -285,7 +286,7 @@ class TabCorte(QWidget):
                 self.ruta_ref = f
                 dims = coord['dimensiones_cm']
                 self.lbl_ref_status.setText(f"Región: {dims['largo_y']:.1f} x {dims['alto_z']:.1f} cm\n(Profundidad: {coord['profundidad']}m)")
-                self.lbl_ref_status.setStyleSheet("color: white; font-weight: bold")
+                self.lbl_ref_status.setStyleSheet("color: #00AA00; font-weight: bold")
                 self.btn_batch.setEnabled(True)
                 
                 if QMessageBox.question(self, "Guardar", "¿Guardar recorte de referencia?") == QMessageBox.StandardButton.Yes:
@@ -293,6 +294,10 @@ class TabCorte(QWidget):
                     saved = self._guardar_pcd(pcd_recorte, f, dims)
                     self.archivo_ref_path = saved
                     self.lbl_saved_file.setText(f"📁 Guardado en:\n{saved}")
+                    
+                    # Preguntar si quiere visualizar
+                    if QMessageBox.question(self, "Visualizar", "¿Deseas visualizar la región recortada?") == QMessageBox.StandardButton.Yes:
+                        self._visualizar_pcd(pcd_recorte)
 
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
@@ -334,6 +339,15 @@ class TabCorte(QWidget):
         full_path = os.path.join(folder, new_name)
         o3d.io.write_point_cloud(full_path, pcd)
         return full_path
+    
+    def _visualizar_pcd(self, pcd):
+        """Visualiza una nube de puntos recortada"""
+        vis = o3d.visualization.Visualizer()
+        vis.create_window(window_name="Vista de Región Recortada")
+        vis.add_geometry(pcd)
+        vis.get_render_option().point_size = 2
+        vis.run()
+        vis.destroy_window()
 
     def cortar_imagen(self):
         f, _ = QFileDialog.getOpenFileName(self, "Seleccionar Imagen", "", "Image (*.jpg *.png *.jpeg)")

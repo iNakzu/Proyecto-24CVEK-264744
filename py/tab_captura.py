@@ -335,24 +335,20 @@ class TabCaptura(QWidget):
         layout.addWidget(grp_params)
         
         # Botón de captura
-        self.btn_capturar = QPushButton("▶️ Iniciar Captura LiDAR")
+        self.btn_capturar = QPushButton("Iniciar Captura LiDAR")
         self.btn_capturar.clicked.connect(self.toggle_captura)
         layout.addWidget(self.btn_capturar)
         
         # Log de salida
-        grp_log = QGroupBox("📋 Log de Captura")
-        log_layout = QVBoxLayout()
+        layout.addWidget(QLabel("📋 Log:"))
         self.text_log = QTextEdit()
         self.text_log.setReadOnly(True)
-        log_layout.addWidget(self.text_log)
+        layout.addWidget(self.text_log)
         
         # Label para mostrar progreso dinámico
         self.label_progress = QLabel("")
-        self.label_progress.setStyleSheet("QLabel { font-weight: bold; color: white; padding: 5px; }")
-        log_layout.addWidget(self.label_progress)
-        
-        grp_log.setLayout(log_layout)
-        layout.addWidget(grp_log)
+        self.label_progress.setStyleSheet("QLabel { font-weight: bold; color: #0066CC; padding: 5px; }")
+        layout.addWidget(self.label_progress)
 
     def toggle_captura(self):
         """Inicia o detiene la captura según el estado actual"""

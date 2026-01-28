@@ -241,7 +241,7 @@ def visualizar_matplotlib_3d(archivo_antes, archivo_despues):
     plt.show()
 
 def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
-    """Visualiza dos nubes con GRID CARTESIANO en centímetros y medidas físicas reales"""
+    """Visualiza dos nubes con GRID MILIMETRADO en centímetros respecto al eje X del sensor (origen)"""
     if not os.path.isfile(archivo_antes):
         print(f"ERROR: No se encontró el archivo {archivo_antes}")
         return
@@ -249,7 +249,7 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
         print(f"ERROR: No se encontró el archivo {archivo_despues}")
         return
     
-    print(f"\n📏 MODO: Visualización con medidas físicas reales")
+    print(f"\n📏 MODO: Visualización con grid milimetrado desde origen (eje X del sensor)")
     print(f"\nCargando {archivo_antes}...")
     pcd_antes = o3d.io.read_point_cloud(archivo_antes)
     points_antes = np.asarray(pcd_antes.points)
@@ -274,10 +274,10 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
     points_antes_cm = points_antes * 100  # metros -> cm
     points_despues_cm = points_despues * 100  # metros -> cm
     
-    # Subsample para visualización
-    max_points = 30000
-    if len(points_antes_cm) > max_points // 2:
-        indices = np.random.choice(len(points_antes_cm), max_points // 2, replace=False)
+    # Subsample agresivo para mejor rendimiento
+    max_points = 8000
+    if len(points_antes_cm) > max_points // 4:
+        indices = np.random.choice(len(points_antes_cm), max_points // 4, replace=False)
         points_antes_cm = points_antes_cm[indices]
     
     if len(points_despues_cm) > max_points:
@@ -287,23 +287,23 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
     else:
         distances_vis = distances_np
     
-    # Crear figura
-    print("\n🎨 Creando visualización con grid métrico...")
-    fig = plt.figure(figsize=(18, 14))
+    # Crear figura (reducida para mejor rendimiento)
+    print("\n🎨 Creando visualización optimizada...")
+    fig = plt.figure(figsize=(14, 10))
     ax = fig.add_subplot(111, projection='3d')
     
     # Colormap personalizado
     colors_list = ['black', 'darkblue', 'blue', 'cyan', 'green', 'yellow', 'orange', 'red']
     cmap = mcolors.LinearSegmentedColormap.from_list('custom_rainbow', colors_list, N=256)
     
-    # ANTES = GRIS CLARO (puntos pequeños)
+    # ANTES = GRIS CLARO (puntos muy pequeños)
     ax.scatter(
         points_antes_cm[:, 0],
         points_antes_cm[:, 1],
         points_antes_cm[:, 2],
         c='lightgray',
-        s=0.5,
-        alpha=0.3,
+        s=0.3,
+        alpha=0.2,
         label='Antes (túnel original)'
     )
     
@@ -314,19 +314,27 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
         points_despues_cm[:, 2],
         c=distances_vis * 100,  # En cm
         cmap=cmap,
-        s=3,
+        s=2,
         alpha=0.6,
         vmin=0,
         vmax=np.max(distances_np) * 100,
         label='Después (shotcrete)'
     )
     
-    # Calcular límites de la nube
+    # Calcular límites de la nube (centrados en el origen)
     all_points = np.vstack([points_antes_cm, points_despues_cm])
     x_min, y_min, z_min = all_points.min(axis=0)
     x_max, y_max, z_max = all_points.max(axis=0)
     
-    # Redondear a múltiplos de 10 cm para grid limpio
+    # Incluir el origen (0,0,0) en los límites si no está
+    x_min = min(x_min, 0)
+    y_min = min(y_min, 0)
+    z_min = min(z_min, 0)
+    x_max = max(x_max, 0)
+    y_max = max(y_max, 0)
+    z_max = max(z_max, 0)
+    
+    # Redondear límites para grid limpio
     x_min = np.floor(x_min / 10) * 10
     y_min = np.floor(y_min / 10) * 10
     z_min = np.floor(z_min / 10) * 10
@@ -335,55 +343,61 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
     z_max = np.ceil(z_max / 10) * 10
     
     # Configurar límites con padding
-    padding = 20  # 20 cm de margen
+    padding = 10  # 10 cm de margen
     ax.set_xlim(x_min - padding, x_max + padding)
     ax.set_ylim(y_min - padding, y_max + padding)
     ax.set_zlim(z_min - padding, z_max + padding)
     
-    # GRID CARTESIANO - líneas cada 10 cm
+    # ============ GRID SIMPLIFICADO RESPECTO AL EJE X (ORIGEN) ============
+    
+    # Solo líneas cada 10 cm para máximo rendimiento
     grid_spacing = 10  # cm
     
-    # Plano XY (z constante)
-    x_grid = np.arange(x_min, x_max + grid_spacing, grid_spacing)
-    y_grid = np.arange(y_min, y_max + grid_spacing, grid_spacing)
-    for x in x_grid:
-        ax.plot([x, x], [y_min, y_max], [z_min, z_min], 'gray', linewidth=0.3, alpha=0.3)
-    for y in y_grid:
-        ax.plot([x_min, x_max], [y, y], [z_min, z_min], 'gray', linewidth=0.3, alpha=0.3)
+    # Crear grids desde el origen (0,0,0)
+    x_grid = np.arange(0, x_max + grid_spacing, grid_spacing)
+    x_grid = np.concatenate([np.arange(0, x_min - grid_spacing, -grid_spacing), x_grid])
     
-    # Plano XZ (y constante)
-    z_grid = np.arange(z_min, z_max + grid_spacing, grid_spacing)
-    for x in x_grid:
-        ax.plot([x, x], [y_min, y_min], [z_min, z_max], 'gray', linewidth=0.3, alpha=0.3)
+    y_grid = np.arange(0, y_max + grid_spacing, grid_spacing)
+    y_grid = np.concatenate([np.arange(0, y_min - grid_spacing, -grid_spacing), y_grid])
+    
+    z_grid = np.arange(0, z_max + grid_spacing, grid_spacing)
+    z_grid = np.concatenate([np.arange(0, z_min - grid_spacing, -grid_spacing), z_grid])
+    
+    # Solo grid principal en plano YZ (X=0) - perpendicular al sensor
+    print("\n📐 Dibujando grid simplificado en plano YZ (cada 10cm)...")
+    
+    # Líneas horizontales (Z constante)
     for z in z_grid:
-        ax.plot([x_min, x_max], [y_min, y_min], [z, z], 'gray', linewidth=0.3, alpha=0.3)
+        ax.plot([0, 0], [y_min, y_max], [z, z], 'black', linewidth=0.8, alpha=0.4)
     
-    # Plano YZ (x constante)
+    # Líneas verticales (Y constante)
     for y in y_grid:
-        ax.plot([x_min, x_min], [y, y], [z_min, z_max], 'gray', linewidth=0.3, alpha=0.3)
-    for z in z_grid:
-        ax.plot([x_min, x_min], [y_min, y_max], [z, z], 'gray', linewidth=0.3, alpha=0.3)
+        ax.plot([0, 0], [y, y], [z_min, z_max], 'black', linewidth=0.8, alpha=0.4)
     
-    # Ejes principales (origen en 0,0,0 o centro de datos)
-    ax.plot([0, 0], [y_min, y_max], [0, 0], 'r-', linewidth=2, alpha=0.5, label='Eje Y')
-    ax.plot([x_min, x_max], [0, 0], [0, 0], 'g-', linewidth=2, alpha=0.5, label='Eje X')
-    ax.plot([0, 0], [0, 0], [z_min, z_max], 'b-', linewidth=2, alpha=0.5, label='Eje Z')
+    # ============ EJES PRINCIPALES DESDE EL ORIGEN ============
+    ax.plot([x_min, x_max], [0, 0], [0, 0], 'r-', linewidth=3, alpha=0.8, label='Eje X (sensor)')
+    ax.plot([0, 0], [y_min, y_max], [0, 0], 'g-', linewidth=3, alpha=0.8, label='Eje Y')
+    ax.plot([0, 0], [0, 0], [z_min, z_max], 'b-', linewidth=3, alpha=0.8, label='Eje Z')
+    
+    # Marcar el origen
+    ax.scatter([0], [0], [0], c='red', s=100, marker='o', edgecolors='black', linewidths=2, 
+               label='ORIGEN (0,0,0)', zorder=10)
     
     # Etiquetas con UNIDADES EN CENTÍMETROS
-    ax.set_xlabel('X (cm)', fontsize=14, fontweight='bold')
+    ax.set_xlabel('X (cm) - Distancia desde sensor', fontsize=14, fontweight='bold')
     ax.set_ylabel('Y (cm)', fontsize=14, fontweight='bold')
     ax.set_zlabel('Z (cm)', fontsize=14, fontweight='bold')
-    ax.set_title('Visualización con Grid Métrico (Grid = 10 cm)\nGris=Antes | Color=Espesor Shotcrete', 
-                 fontsize=16, fontweight='bold', pad=20)
+    ax.set_title('Grid Métrico desde Origen (Eje X = Sensor)\nGrid cada 10 cm', 
+                 fontsize=14, fontweight='bold', pad=15)
     
-    # Configurar ticks para mostrar cada 20 cm
-    tick_spacing = 20
+    # Configurar ticks cada 10 cm
+    tick_spacing = 10
     ax.set_xticks(np.arange(x_min, x_max + tick_spacing, tick_spacing))
     ax.set_yticks(np.arange(y_min, y_max + tick_spacing, tick_spacing))
     ax.set_zticks(np.arange(z_min, z_max + tick_spacing, tick_spacing))
     
     # Formatear labels de ticks
-    ax.tick_params(axis='both', which='major', labelsize=9)
+    ax.tick_params(axis='both', which='major', labelsize=10)
     
     # Barra de color
     cbar = plt.colorbar(scatter, ax=ax, pad=0.1, shrink=0.7)
@@ -398,36 +412,39 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
     dim_z = z_max - z_min
     
     # Información con medidas físicas
-    info_text = f"""📏 MEDIDAS FÍSICAS:
-• Dimensión X: {dim_x:.1f} cm
-• Dimensión Y: {dim_y:.1f} cm
-• Dimensión Z: {dim_z:.1f} cm
-• Volumen aprox: {(dim_x*dim_y*dim_z)/1000000:.2f} m³
+    info_text = f"""📏 REFERENCIA: ORIGEN (0,0,0) = SENSOR
+
+📐 DIMENSIONES:
+• Eje X: {x_min:.0f} a {x_max:.0f} cm ({dim_x:.0f} cm)
+• Eje Y: {y_min:.0f} a {y_max:.0f} cm ({dim_y:.0f} cm)
+• Eje Z: {z_min:.0f} a {z_max:.0f} cm ({dim_z:.0f} cm)
 
 📊 ESPESOR SHOTCRETE:
 • Promedio: {mean_dist*100:.2f} cm
 • Mínimo: {np.min(distances_np)*100:.2f} cm
 • Máximo: {np.max(distances_np)*100:.2f} cm
 
-🔷 GRID: Líneas cada 10 cm
-🔢 EJES: Marcas cada 20 cm
+🔷 GRID MÉTRICO:
+• Líneas: cada 10 cm
+• Marcas en ejes: cada 10 cm
 """
     fig.text(0.02, 0.98, info_text, 
-             fontsize=10, 
+             fontsize=9, 
              verticalalignment='top',
              fontfamily='monospace',
-             bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.9))
+             bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.95))
     
     print("\n" + "="*70)
-    print("✅ VISUALIZACIÓN CON GRID MÉTRICO LISTA")
+    print("✅ VISUALIZACIÓN OPTIMIZADA LISTA")
     print("="*70)
     print("\n📏 Características:")
-    print(f"  • Grid cartesiano: líneas cada 10 cm")
-    print(f"  • Ejes numerados: marcas cada 20 cm")
-    print(f"  • Dimensiones reales en centímetros")
-    print(f"  • Rango X: {x_min:.0f} a {x_max:.0f} cm ({dim_x:.1f} cm total)")
-    print(f"  • Rango Y: {y_min:.0f} a {y_max:.0f} cm ({dim_y:.1f} cm total)")
-    print(f"  • Rango Z: {z_min:.0f} a {z_max:.0f} cm ({dim_z:.1f} cm total)")
+    print(f"  • Grid simplificado: líneas cada 10 cm")
+    print(f"  • Puntos optimizados: {len(points_despues_cm):,} puntos")
+    print(f"  • Origen (0,0,0) = Posición del sensor")
+    print(f"  • Eje X: distancia desde el sensor")
+    print(f"  • Rango X: {x_min:.0f} a {x_max:.0f} cm")
+    print(f"  • Rango Y: {y_min:.0f} a {y_max:.0f} cm")
+    print(f"  • Rango Z: {z_min:.0f} a {z_max:.0f} cm")
     print("\n🎮 Controles:")
     print("  • Click + arrastrar: Rotar vista")
     print("  • Scroll: Zoom")
@@ -540,20 +557,8 @@ class TabVisualizacion(QWidget):
         layout.addWidget(grupo_opciones)
         
         # Botón de visualización
-        self.btn_visualizar = QPushButton("VISUALIZAR")
+        self.btn_visualizar = QPushButton("Visualizar")
         self.btn_visualizar.clicked.connect(self.iniciar_visualizacion)
-        self.btn_visualizar.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-size: 14px;
-                font-weight: bold;
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
         layout.addWidget(self.btn_visualizar)
         
         # Área de log
@@ -614,17 +619,34 @@ class TabVisualizacion(QWidget):
         self.log.clear()
         self.log.append(f"🚀 Iniciando visualización (modo {modo})...")
         
-        # Crear worker
-        point_size = self.spin_point_size.value()
-        self.worker = WorkerVisualizacion(
-            modo, 
-            self.ruta_archivo1, 
-            self.ruta_archivo2, 
-            point_size
-        )
-        self.worker.log_signal.connect(self.log.append)
-        self.worker.finished.connect(self.on_visualizacion_finished)
-        self.worker.start()
+        # Matplotlib (modos 3 y 4) debe ejecutarse en el hilo principal
+        if modo in [3, 4]:
+            try:
+                if modo == 3:
+                    self.log.append(f"📂 Generando mapa de calor 3D...")
+                    visualizar_matplotlib_3d(self.ruta_archivo1, self.ruta_archivo2)
+                elif modo == 4:
+                    self.log.append(f"📂 Generando visualización con grid métrico...")
+                    visualizar_con_grid_metrico(self.ruta_archivo1, self.ruta_archivo2)
+                
+                self.log.append("✅ Visualización completada")
+            except Exception as e:
+                self.log.append(f"❌ Error: {str(e)}")
+            finally:
+                self.btn_visualizar.setEnabled(True)
+                self.log.append("\n✅ Proceso completado")
+        else:
+            # Open3D (modos 1 y 2) puede usar worker thread
+            point_size = self.spin_point_size.value()
+            self.worker = WorkerVisualizacion(
+                modo, 
+                self.ruta_archivo1, 
+                self.ruta_archivo2, 
+                point_size
+            )
+            self.worker.log_signal.connect(self.log.append)
+            self.worker.finished.connect(self.on_visualizacion_finished)
+            self.worker.start()
     
     def on_visualizacion_finished(self):
         self.btn_visualizar.setEnabled(True)

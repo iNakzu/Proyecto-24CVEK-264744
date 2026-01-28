@@ -7,7 +7,6 @@ from tab_captura import TabCaptura
 from tab_corte import TabCorte
 from tab_comparacion import TabComparacion
 from tab_textura import TabTextura
-from tab_fusion import TabFusion
 from tab_visualizar import TabVisualizacion
 
 # ==============================================================================
@@ -26,7 +25,7 @@ class StreamRedirector(QObject):
 class VentanaPrincipal(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Suite Completa LiDAR - Captura, Corte, Análisis, Texturizado, Fusión y Visualización")
+        self.setWindowTitle("Suite Completa LiDAR - Captura, Corte, Análisis, Texturizado y Visualización")
         self.resize(1100, 800)
         
         self.redirector = StreamRedirector()
@@ -41,7 +40,6 @@ class VentanaPrincipal(QMainWindow):
         self.tab_corte = TabCorte()
         self.tab_comparacion = TabComparacion()
         self.tab_textura = TabTextura()
-        self.tab_fusion = TabFusion()
         self.tab_visualizar = TabVisualizacion()
         
         # Agregar pestañas a la interfaz
@@ -49,8 +47,7 @@ class VentanaPrincipal(QMainWindow):
         self.tabs.addTab(self.tab_corte, "✂️ 1. Cortar Nubes (3D/2D)")
         self.tabs.addTab(self.tab_comparacion, "📊 2. Comparar Nubes")
         self.tabs.addTab(self.tab_textura, "🎨 3. Texturizar")
-        self.tabs.addTab(self.tab_fusion, "🔗 4. Fusión 3D")
-        self.tabs.addTab(self.tab_visualizar, "👁️ 5. Visualizar")
+        self.tabs.addTab(self.tab_visualizar, "👁️ 4. Visualizar")
 
         # Conexión automática entre pestañas
         self.tab_corte.archivos_generados.connect(self.transferir_archivos)
