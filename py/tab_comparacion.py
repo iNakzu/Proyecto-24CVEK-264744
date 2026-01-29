@@ -22,14 +22,14 @@ class WorkerComparacion(QThread):
         nube2 = self.cargar_ply(self.ruta_despues, "Nube Después")
         
         if not nube1 or not nube2:
-            self.log_signal.emit("❌ Error: No se pudieron cargar las nubes.")
+            self.log_signal.emit("Error: No se pudieron cargar las nubes.")
             self.finished.emit()
             return
 
-        self.log_signal.emit("👀 Abriendo visualizador...")
+        self.log_signal.emit("Abriendo visualizador...")
         self.visualizar_solapados(nube1, nube2)
 
-        self.log_signal.emit("\n📊 Calculando estadísticas...")
+        self.log_signal.emit("\nCalculando estadísticas...")
         res1 = self.calcular_distancias_al_sensor(nube1, "ANTES")
         res2 = self.calcular_distancias_al_sensor(nube2, "DESPUÉS")
 
@@ -40,23 +40,23 @@ class WorkerComparacion(QThread):
         diferencia_med = (med1 - med2) * 100
 
         self.log_signal.emit("\n" + "="*40)
-        self.log_signal.emit(f"📉 DIFERENCIAS (Antes - Después)")
+        self.log_signal.emit(f"DIFERENCIAS (Antes - Después)")
         self.log_signal.emit("="*40)
         self.log_signal.emit(f"   Δ Promedio:  {diferencia_prom:+.2f} cm")
         self.log_signal.emit(f"   Δ Mediana:   {diferencia_med:+.2f} cm")
         
         if diferencia_prom > 0:
-            self.log_signal.emit(f"   ➜ El espesor ha DISMINUIDO en {abs(diferencia_prom):.2f} cm")
+            self.log_signal.emit(f"   El espesor ha DISMINUIDO en {abs(diferencia_prom):.2f} cm")
         else:
-            self.log_signal.emit(f"   ➜ El espesor ha AUMENTADO en {abs(diferencia_prom):.2f} cm")
+            self.log_signal.emit(f"   El espesor ha AUMENTADO en {abs(diferencia_prom):.2f} cm")
 
         self.finished.emit()
 
     def cargar_ply(self, ruta, nombre):
         if not os.path.isfile(ruta):
-            self.log_signal.emit(f"⚠ Archivo no encontrado: {ruta}")
+            self.log_signal.emit(f"Archivo no encontrado: {ruta}")
             return None
-        self.log_signal.emit(f"📂 Cargando {nombre}...")
+        self.log_signal.emit(f"Cargando {nombre}...")
         return o3d.io.read_point_cloud(ruta)
 
     def calcular_distancias_al_sensor(self, pcd, nombre):
@@ -110,7 +110,7 @@ class TabComparacion(QWidget):
         self.lbl_1 = QLabel("Nube Antes: -")
         btn_1 = QPushButton("Seleccionar 'Antes'")
         btn_1.clicked.connect(self.sel_1)
-        self.btn_clear_1 = QPushButton("❌")
+        self.btn_clear_1 = QPushButton("X")
         self.btn_clear_1.setMaximumWidth(40)
         self.btn_clear_1.clicked.connect(self.clear_1)
         self.btn_clear_1.setEnabled(False)
@@ -123,7 +123,7 @@ class TabComparacion(QWidget):
         self.lbl_2 = QLabel("Nube Después: -")
         btn_2 = QPushButton("Seleccionar 'Después'")
         btn_2.clicked.connect(self.sel_2)
-        self.btn_clear_2 = QPushButton("❌")
+        self.btn_clear_2 = QPushButton("X")
         self.btn_clear_2.setMaximumWidth(40)
         self.btn_clear_2.clicked.connect(self.clear_2)
         self.btn_clear_2.setEnabled(False)
@@ -140,7 +140,7 @@ class TabComparacion(QWidget):
         self.btn_comp.clicked.connect(self.run_process)
         layout.addWidget(self.btn_comp)
         
-        layout.addWidget(QLabel("📋 Log:"))
+        layout.addWidget(QLabel("Log:"))
         self.console = QTextEdit()
         self.console.setReadOnly(True)
         layout.addWidget(self.console)
@@ -155,25 +155,25 @@ class TabComparacion(QWidget):
 
     def cargar_nube_1(self, ruta):
         self.ruta_1 = ruta
-        self.lbl_1.setText(f"✅ {os.path.basename(ruta)}")
+        self.lbl_1.setText(f"{os.path.basename(ruta)}")
         self.btn_clear_1.setEnabled(True)
         self.check_ready()
 
     def cargar_nube_2(self, ruta):
         self.ruta_2 = ruta
-        self.lbl_2.setText(f"✅ {os.path.basename(ruta)}")
+        self.lbl_2.setText(f"{os.path.basename(ruta)}")
         self.btn_clear_2.setEnabled(True)
         self.check_ready()
     
     def clear_1(self):
         self.ruta_1 = None
-        self.lbl_1.setText("Nube Antes: ❌")
+        self.lbl_1.setText("Nube Antes: -")
         self.btn_clear_1.setEnabled(False)
         self.check_ready()
     
     def clear_2(self):
         self.ruta_2 = None
-        self.lbl_2.setText("Nube Después: ❌")
+        self.lbl_2.setText("Nube Después: -")
         self.btn_clear_2.setEnabled(False)
         self.check_ready()
 
@@ -186,7 +186,7 @@ class TabComparacion(QWidget):
     def run_process(self):
         self.console.clear()
         self.btn_comp.setEnabled(False)
-        self.console.append("⏳ Iniciando comparación...")
+        self.console.append("Iniciando comparación...")
         
         self.worker = WorkerComparacion(self.ruta_1, self.ruta_2)
         self.worker.log_signal.connect(self.console.append)

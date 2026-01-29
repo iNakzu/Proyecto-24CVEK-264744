@@ -471,21 +471,21 @@ class WorkerVisualizacion(QThread):
     def run(self):
         try:
             if self.modo == 1:
-                self.log_signal.emit(f"📂 Cargando {self.archivo1}...")
+                self.log_signal.emit(f"Cargando {self.archivo1}...")
                 visualizar_una_nube(self.archivo1, self.point_size)
             elif self.modo == 2:
-                self.log_signal.emit(f"📂 Cargando {self.archivo1} y {self.archivo2}...")
+                self.log_signal.emit(f"Cargando {self.archivo1} y {self.archivo2}...")
                 visualizar_dos_nubes_superpuestas(self.archivo1, self.archivo2, self.point_size)
             elif self.modo == 3:
-                self.log_signal.emit(f"📂 Generando mapa de calor 3D...")
+                self.log_signal.emit(f"Generando mapa de calor 3D...")
                 visualizar_matplotlib_3d(self.archivo1, self.archivo2)
             elif self.modo == 4:
-                self.log_signal.emit(f"📂 Generando visualización con grid métrico...")
+                self.log_signal.emit(f"Generando visualización con grid métrico...")
                 visualizar_con_grid_metrico(self.archivo1, self.archivo2)
             
-            self.log_signal.emit("✅ Visualización completada")
+            self.log_signal.emit("Visualización completada")
         except Exception as e:
-            self.log_signal.emit(f"❌ Error: {str(e)}")
+            self.log_signal.emit(f"Error: {str(e)}")
         finally:
             self.finished.emit()
 
@@ -500,13 +500,13 @@ class TabVisualizacion(QWidget):
         layout = QVBoxLayout(self)
         
         # Grupo: Selección de archivos
-        grupo_archivos = QGroupBox("📂 Selección de Archivos")
+        grupo_archivos = QGroupBox("Selección de Archivos")
         layout_archivos = QVBoxLayout()
         
         # Archivo 1 (ANTES o única nube)
         layout_archivo1 = QHBoxLayout()
         self.label_archivo1 = QLabel("No seleccionado")
-        btn_archivo1 = QPushButton("📁 Seleccionar Archivo 1 (ANTES)")
+        btn_archivo1 = QPushButton("Seleccionar Archivo 1 (ANTES)")
         btn_archivo1.clicked.connect(self.seleccionar_archivo1)
         layout_archivo1.addWidget(btn_archivo1)
         layout_archivo1.addWidget(self.label_archivo1)
@@ -515,7 +515,7 @@ class TabVisualizacion(QWidget):
         # Archivo 2 (DESPUÉS) - opcional
         layout_archivo2 = QHBoxLayout()
         self.label_archivo2 = QLabel("No seleccionado (opcional)")
-        btn_archivo2 = QPushButton("📁 Seleccionar Archivo 2 (DESPUÉS)")
+        btn_archivo2 = QPushButton("Seleccionar Archivo 2 (DESPUÉS)")
         btn_archivo2.clicked.connect(self.seleccionar_archivo2)
         layout_archivo2.addWidget(btn_archivo2)
         layout_archivo2.addWidget(self.label_archivo2)
@@ -525,7 +525,7 @@ class TabVisualizacion(QWidget):
         layout.addWidget(grupo_archivos)
         
         # Grupo: Opciones de visualización
-        grupo_opciones = QGroupBox("⚙️ Opciones de Visualización")
+        grupo_opciones = QGroupBox("Opciones de Visualización")
         layout_opciones = QVBoxLayout()
         
         # Modo de visualización
@@ -565,7 +565,7 @@ class TabVisualizacion(QWidget):
         self.log = QTextEdit()
         self.log.setReadOnly(True)
         self.log.setMaximumHeight(150)
-        layout.addWidget(QLabel("📋 Log:"))
+        layout.addWidget(QLabel("Log:"))
         layout.addWidget(self.log)
         
         layout.addStretch()

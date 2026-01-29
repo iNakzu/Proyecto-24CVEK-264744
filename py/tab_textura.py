@@ -4,7 +4,7 @@ import open3d as o3d
 from PIL import Image
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, 
                              QPushButton, QLabel, QFileDialog, QTextEdit, 
-                             QMessageBox, QSpinBox)
+                             QMessageBox, QSpinBox, QComboBox)
 from PyQt6.QtCore import QThread, pyqtSignal
 
 # ==============================================================================
@@ -21,39 +21,45 @@ class WorkerTextura(QThread):
 
     def run(self):
         try:
-            # Cargar nube ANTES
-            self.log_signal.emit(f"📂 Cargando nube ANTES: {os.path.basename(self.data['pcd1_path'])}")
+            modo = self.data.get('modo', 'comparacion')
+            
+            # Cargar nube 1
+            self.log_signal.emit(f"Cargando nube 1: {os.path.basename(self.data['pcd1_path'])}")
             pcd1 = o3d.io.read_point_cloud(self.data['pcd1_path'])
             
-            # Cargar nube DESPUÉS
-            self.log_signal.emit(f"📂 Cargando nube DESPUÉS: {os.path.basename(self.data['pcd2_path'])}")
-            pcd2 = o3d.io.read_point_cloud(self.data['pcd2_path'])
-            
-            # Procesar ANTES
-            self.log_signal.emit("🔧 Procesando nube ANTES...")
+            # Procesar nube 1
+            self.log_signal.emit("🔧 Procesando nube 1...")
             mesh1 = self._procesar_nube_textura(
                 pcd1, 
                 self.data['img1_path'], 
                 self.data['depth']
             )
             
-            # Procesar DESPUÉS
-            self.log_signal.emit("🔧 Procesando nube DESPUÉS...")
-            mesh2 = self._procesar_nube_textura(
-                pcd2, 
-                self.data['img2_path'], 
-                self.data['depth']
-            )
+            resultado = {'mesh1': mesh1, 'mesh2': None, 'espesor_data': None}
             
-            # Calcular espesor (distancias al origen)
-            self.log_signal.emit("📏 Calculando espesores...")
-            espesor_data = self._calcular_espesor(pcd1, pcd2)
-            
-            resultado = {
-                'mesh1': mesh1,
-                'mesh2': mesh2,
-                'espesor_data': espesor_data
-            }
+            # Si es modo comparación, procesar segunda nube
+            if modo == 'comparacion':
+                # Cargar nube 2
+                self.log_signal.emit(f"Cargando nube 2: {os.path.basename(self.data['pcd2_path'])}")
+                pcd2 = o3d.io.read_point_cloud(self.data['pcd2_path'])
+                
+                # Procesar nube 2
+                self.log_signal.emit("🔧 Procesando nube 2...")
+                mesh2 = self._procesar_nube_textura(
+                    pcd2, 
+                    self.data['img2_path'], 
+                    self.data['depth']
+                )
+                
+                # Calcular espesor (distancias al origen)
+                self.log_signal.emit("📏 Calculando espesores...")
+                espesor_data = self._calcular_espesor(pcd1, pcd2)
+                
+                resultado = {
+                    'mesh1': mesh1,
+                    'mesh2': mesh2,
+                    'espesor_data': espesor_data
+                }
             
             self.finished_signal.emit(resultado)
             
@@ -185,6 +191,7 @@ class WorkerTextura(QThread):
 class TabTextura(QWidget):
     def __init__(self):
         super().__init__()
+        self.modo = "una"  # "una" o "comparacion"
         self.pcd1_path = None
         self.img1_path = None
         self.pcd2_path = None
@@ -195,12 +202,24 @@ class TabTextura(QWidget):
     def setup_ui(self):
         layout = QVBoxLayout(self)
         
+        # ===== SELECTOR DE MODO =====
+        grp_modo = QGroupBox("Modo de Visualización")
+        l_modo = QHBoxLayout()
+        l_modo.addWidget(QLabel("Seleccionar modo:"))
+        self.combo_modo = QComboBox()
+        self.combo_modo.addItems(["Una nube", "Comparación de dos nubes"])
+        self.combo_modo.currentIndexChanged.connect(self.cambiar_modo)
+        l_modo.addWidget(self.combo_modo)
+        l_modo.addStretch()
+        grp_modo.setLayout(l_modo)
+        layout.addWidget(grp_modo)
+        
         # ===== ANTES =====
-        grp_antes = QGroupBox("📦 ANTES (Túnel sin shotcrete)")
+        self.grp_antes = QGroupBox("Nube 1 (ANTES)")
         l_antes = QVBoxLayout()
         
         h1 = QHBoxLayout()
-        self.btn_pcd1 = QPushButton("Cargar Nube ANTES (.ply)")
+        self.btn_pcd1 = QPushButton("Cargar Nube 1 (.ply)")
         self.btn_pcd1.clicked.connect(self.load_pcd1)
         self.lbl_pcd1 = QLabel("No seleccionado")
         h1.addWidget(self.btn_pcd1)
@@ -208,22 +227,22 @@ class TabTextura(QWidget):
         l_antes.addLayout(h1)
         
         h2 = QHBoxLayout()
-        self.btn_img1 = QPushButton("Cargar Textura ANTES (.jpg/.jpeg)")
+        self.btn_img1 = QPushButton("Cargar Textura 1 (.jpg/.jpeg)")
         self.btn_img1.clicked.connect(self.load_img1)
         self.lbl_img1 = QLabel("No seleccionado")
         h2.addWidget(self.btn_img1)
         h2.addWidget(self.lbl_img1)
         l_antes.addLayout(h2)
         
-        grp_antes.setLayout(l_antes)
-        layout.addWidget(grp_antes)
+        self.grp_antes.setLayout(l_antes)
+        layout.addWidget(self.grp_antes)
         
         # ===== DESPUÉS =====
-        grp_despues = QGroupBox("📦 DESPUÉS (Túnel con shotcrete)")
+        self.grp_despues = QGroupBox("Nube 2 (DESPUÉS)")
         l_despues = QVBoxLayout()
         
         h3 = QHBoxLayout()
-        self.btn_pcd2 = QPushButton("Cargar Nube DESPUÉS (.ply)")
+        self.btn_pcd2 = QPushButton("Cargar Nube 2 (.ply)")
         self.btn_pcd2.clicked.connect(self.load_pcd2)
         self.lbl_pcd2 = QLabel("No seleccionado")
         h3.addWidget(self.btn_pcd2)
@@ -231,15 +250,15 @@ class TabTextura(QWidget):
         l_despues.addLayout(h3)
         
         h4 = QHBoxLayout()
-        self.btn_img2 = QPushButton("Cargar Textura DESPUÉS (.jpg/.jpeg)")
+        self.btn_img2 = QPushButton("Cargar Textura 2 (.jpg/.jpeg)")
         self.btn_img2.clicked.connect(self.load_img2)
         self.lbl_img2 = QLabel("No seleccionado")
         h4.addWidget(self.btn_img2)
         h4.addWidget(self.lbl_img2)
         l_despues.addLayout(h4)
         
-        grp_despues.setLayout(l_despues)
-        layout.addWidget(grp_despues)
+        self.grp_despues.setLayout(l_despues)
+        layout.addWidget(self.grp_despues)
         
         # ===== PARÁMETROS =====
         h_param = QHBoxLayout()
@@ -251,17 +270,17 @@ class TabTextura(QWidget):
         layout.addLayout(h_param)
         
         # ===== BOTONES DE ACCIÓN =====
-        self.btn_procesar = QPushButton("Procesar y Comparar Espesor")
+        self.btn_procesar = QPushButton("Procesar Texturización")
         self.btn_procesar.clicked.connect(self.run_process)
         self.btn_procesar.setEnabled(False)
         layout.addWidget(self.btn_procesar)
         
         h_res = QHBoxLayout()
-        self.btn_view_antes = QPushButton("Ver 3D ANTES")
+        self.btn_view_antes = QPushButton("Ver 3D Nube 1")
         self.btn_view_antes.clicked.connect(self.visualize_antes)
         self.btn_view_antes.setEnabled(False)
         
-        self.btn_view_despues = QPushButton("Ver 3D DESPUÉS")
+        self.btn_view_despues = QPushButton("Ver 3D Nube 2")
         self.btn_view_despues.clicked.connect(self.visualize_despues)
         self.btn_view_despues.setEnabled(False)
         
@@ -280,10 +299,34 @@ class TabTextura(QWidget):
         layout.addWidget(self.btn_save)
         
         # ===== LOG =====
-        layout.addWidget(QLabel("📋 Log:"))
+        layout.addWidget(QLabel("Log:"))
         self.log_area = QTextEdit()
         self.log_area.setReadOnly(True)
         layout.addWidget(self.log_area)
+        
+        # Inicializar modo
+        self.cambiar_modo(0)
+    
+    def cambiar_modo(self, index):
+        """Cambia entre modo una nube y modo comparación"""
+        self.modo = "una" if index == 0 else "comparacion"
+        
+        # Mostrar/ocultar grupo DESPUÉS
+        self.grp_despues.setVisible(self.modo == "comparacion")
+        
+        # Actualizar botones de visualización
+        self.btn_view_despues.setVisible(self.modo == "comparacion")
+        self.btn_view_solapado.setVisible(self.modo == "comparacion")
+        
+        # Actualizar texto del botón procesar
+        if self.modo == "una":
+            self.btn_procesar.setText("Procesar Texturización")
+            self.grp_antes.setTitle("Nube Texturizada")
+        else:
+            self.btn_procesar.setText("Procesar y Comparar Espesor")
+            self.grp_antes.setTitle("Nube 1 (ANTES)")
+        
+        self.check_ready()
     
     def load_pcd1(self):
         f, _ = QFileDialog.getOpenFileName(self, "Nube ANTES", "", "PLY (*.ply)")
@@ -314,12 +357,15 @@ class TabTextura(QWidget):
             self.check_ready()
     
     def check_ready(self):
-        ready = all([self.pcd1_path, self.img1_path, self.pcd2_path, self.img2_path])
+        if self.modo == "una":
+            ready = bool(self.pcd1_path and self.img1_path)
+        else:
+            ready = bool(all([self.pcd1_path, self.img1_path, self.pcd2_path, self.img2_path]))
         self.btn_procesar.setEnabled(ready)
     
     def run_process(self):
         self.log_area.clear()
-        self.log_area.append("🚀 Iniciando procesamiento...")
+        self.log_area.append("Iniciando procesamiento...")
         self.btn_procesar.setEnabled(False)
         
         self.worker = WorkerTextura({
@@ -327,7 +373,8 @@ class TabTextura(QWidget):
             'img1_path': self.img1_path,
             'pcd2_path': self.pcd2_path,
             'img2_path': self.img2_path,
-            'depth': self.spin_depth.value()
+            'depth': self.spin_depth.value(),
+            'modo': self.modo
         })
         
         self.worker.log_signal.connect(self.log_area.append)
@@ -337,37 +384,44 @@ class TabTextura(QWidget):
     
     def on_finished(self, resultado):
         self.resultado = resultado
-        espesor = resultado['espesor_data']
         
-        # Mostrar estadísticas al estilo de tab_comparacion.py
-        self.log_area.append("\n📊 Calculando estadísticas...")
+        if self.modo == "comparacion" and resultado['espesor_data']:
+            espesor = resultado['espesor_data']
+            
+            # Mostrar estadísticas al estilo de tab_comparacion.py
+            self.log_area.append("\nCalculando estadísticas...")
+            
+            self.log_area.append("\n🔹 Estadísticas de ANTES:")
+            self.log_area.append(f"   Promedio:    {espesor['prom1']:.2f} cm")
+            self.log_area.append(f"   Mediana:     {espesor['med1']:.2f} cm")
+            
+            self.log_area.append("\n🔹 Estadísticas de DESPUÉS:")
+            self.log_area.append(f"   Promedio:    {espesor['prom2']:.2f} cm")
+            self.log_area.append(f"   Mediana:     {espesor['med2']:.2f} cm")
+            
+            self.log_area.append("\n" + "="*40)
+            self.log_area.append(f"DIFERENCIAS (Antes - Después)")
+            self.log_area.append("="*40)
+            self.log_area.append(f"   Δ Promedio:  {espesor['diferencia_prom']:+.2f} cm")
+            self.log_area.append(f"   Δ Mediana:   {espesor['diferencia_med']:+.2f} cm")
+            
+            if espesor['diferencia_prom'] > 0:
+                self.log_area.append(f"   El espesor ha DISMINUIDO en {abs(espesor['diferencia_prom']):.2f} cm")
+            else:
+                self.log_area.append(f"   El espesor ha AUMENTADO en {abs(espesor['diferencia_prom']):.2f} cm")
+            
+            self.log_area.append("\n" + "="*40)
         
-        self.log_area.append("\n🔹 Estadísticas de ANTES:")
-        self.log_area.append(f"   Promedio:    {espesor['prom1']:.2f} cm")
-        self.log_area.append(f"   Mediana:     {espesor['med1']:.2f} cm")
-        
-        self.log_area.append("\n🔹 Estadísticas de DESPUÉS:")
-        self.log_area.append(f"   Promedio:    {espesor['prom2']:.2f} cm")
-        self.log_area.append(f"   Mediana:     {espesor['med2']:.2f} cm")
-        
-        self.log_area.append("\n" + "="*40)
-        self.log_area.append(f"📉 DIFERENCIAS (Antes - Después)")
-        self.log_area.append("="*40)
-        self.log_area.append(f"   Δ Promedio:  {espesor['diferencia_prom']:+.2f} cm")
-        self.log_area.append(f"   Δ Mediana:   {espesor['diferencia_med']:+.2f} cm")
-        
-        if espesor['diferencia_prom'] > 0:
-            self.log_area.append(f"   ➜ El espesor ha DISMINUIDO en {abs(espesor['diferencia_prom']):.2f} cm")
-        else:
-            self.log_area.append(f"   ➜ El espesor ha AUMENTADO en {abs(espesor['diferencia_prom']):.2f} cm")
-        
-        self.log_area.append("\n" + "="*40)
-        self.log_area.append("✅ Procesamiento completado")
+        self.log_area.append("Procesamiento completado")
         
         self.btn_procesar.setEnabled(True)
         self.btn_view_antes.setEnabled(True)
-        self.btn_view_despues.setEnabled(True)
-        self.btn_view_solapado.setEnabled(True)
+        
+        # Solo habilitar botones de nube 2 en modo comparación
+        if self.modo == "comparacion":
+            self.btn_view_despues.setEnabled(True)
+            self.btn_view_solapado.setEnabled(True)
+        
         self.btn_save.setEnabled(True)
     
     def visualize_antes(self):
@@ -384,13 +438,46 @@ class TabTextura(QWidget):
     
     def visualize_solapado(self):
         if self.resultado:
-            # Visualizar ambos meshes con sus texturas originales
-            vis = o3d.visualization.Visualizer()
-            vis.create_window(window_name="Comparación: ANTES y DESPUÉS con Texturas")
-            vis.add_geometry(self.resultado['mesh1'])
-            vis.add_geometry(self.resultado['mesh2'])
+            geom1 = self.resultado['mesh1']
+            geom2 = self.resultado['mesh2']
+            
+            # Crear visualizador con callbacks de teclado
+            vis = o3d.visualization.VisualizerWithKeyCallback()
+            vis.create_window(window_name="Comparación: [1]=ANTES [2]=DESPUÉS")
+            
+            vis.add_geometry(geom1)
+            vis.add_geometry(geom2)
+            
             vis.get_render_option().background_color = np.asarray([1.0, 1.0, 1.0])
             vis.get_render_option().mesh_show_back_face = True
+            
+            # Estado de qué geometría está visible
+            estado = {'mostrar_antes': True, 'mostrar_despues': True}
+            
+            def toggle_antes(vis):
+                """Tecla 1: Toggle ANTES (mostrar/ocultar)"""
+                if estado['mostrar_antes']:
+                    vis.remove_geometry(geom1, reset_bounding_box=False)
+                    estado['mostrar_antes'] = False
+                else:
+                    vis.add_geometry(geom1, reset_bounding_box=False)
+                    estado['mostrar_antes'] = True
+                return False
+            
+            def toggle_despues(vis):
+                """Tecla 2: Toggle DESPUÉS (mostrar/ocultar)"""
+                if estado['mostrar_despues']:
+                    vis.remove_geometry(geom2, reset_bounding_box=False)
+                    estado['mostrar_despues'] = False
+                else:
+                    vis.add_geometry(geom2, reset_bounding_box=False)
+                    estado['mostrar_despues'] = True
+                return False
+            
+            # Registrar callbacks (49=1, 50=2)
+            vis.register_key_callback(49, toggle_antes)
+            vis.register_key_callback(50, toggle_despues)
+            
             vis.run()
             vis.destroy_window()
     

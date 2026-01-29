@@ -63,7 +63,7 @@ def run_lidar_and_collect_points(duration_sec, stop_callback=None):
         for line in process.stdout:
             # Verificar si se solicitó detener
             if stop_callback and stop_callback():
-                print("\n⏹️ Captura detenida por el usuario.")
+                print("\nCaptura detenida por el usuario.")
                 break
                 
             line = line.strip()
@@ -256,7 +256,7 @@ class WorkerCaptura(QThread):
             main_captura(stop_callback=self.should_stop)
             
         except Exception as e:
-            self.log_signal.emit(f"❌ Error durante captura: {str(e)}")
+            self.log_signal.emit(f"Error durante captura: {str(e)}")
         finally:
             sys.stdout = original_stdout
             sys.stderr = original_stderr
@@ -274,7 +274,7 @@ class TabCaptura(QWidget):
     def init_ui(self):
         layout = QVBoxLayout(self)
         
-        grp_params = QGroupBox("⚙️ Configuración de Captura")
+        grp_params = QGroupBox("Configuración de Captura")
         grid = QGridLayout()
         
         grid.addWidget(QLabel("Duración (segundos):"), 0, 0)
@@ -340,7 +340,7 @@ class TabCaptura(QWidget):
         layout.addWidget(self.btn_capturar)
         
         # Log de salida
-        layout.addWidget(QLabel("📋 Log:"))
+        layout.addWidget(QLabel("Log:"))
         self.text_log = QTextEdit()
         self.text_log.setReadOnly(True)
         layout.addWidget(self.text_log)
@@ -355,8 +355,8 @@ class TabCaptura(QWidget):
         if self.worker and self.worker.isRunning():
             # Detener captura
             self.worker.request_stop()
-            self.text_log.append("⏹️ Deteniendo captura...")
-            self.label_progress.setText("⏹️ Deteniendo...")
+            self.text_log.append("Deteniendo captura...")
+            self.label_progress.setText("Deteniendo...")
             self.btn_capturar.setEnabled(False)
         else:
             # Iniciar captura
@@ -378,10 +378,10 @@ class TabCaptura(QWidget):
         
         self.text_log.clear()
         self.label_progress.clear()
-        self.text_log.append("🚀 Iniciando captura LiDAR...\n")
+        self.text_log.append("Iniciando captura LiDAR...\n")
         
         # Cambiar botón a modo "Detener"
-        self.btn_capturar.setText("⏹️ Detener Captura")
+        self.btn_capturar.setText("Detener Captura")
         self.btn_capturar.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
         
         self.worker = WorkerCaptura(params)
@@ -397,14 +397,14 @@ class TabCaptura(QWidget):
     def on_captura_finished(self):
         # Verificar si fue cancelada
         if self.worker and self.worker._stop_requested:
-            self.text_log.append("\n❌ Captura cancelada por el usuario.")
-            self.label_progress.setText("❌ Captura cancelada")
+            self.text_log.append("\nCaptura cancelada por el usuario.")
+            self.label_progress.setText("Captura cancelada")
         else:
-            self.text_log.append("\n✅ Captura finalizada.")
-            self.label_progress.setText("✅ Captura completada")
+            self.text_log.append("\nCaptura finalizada.")
+            self.label_progress.setText("Captura completada")
             QMessageBox.information(self, "Captura completa", "La captura LiDAR ha finalizado correctamente.")
         
         # Restaurar botón a modo "Iniciar"
-        self.btn_capturar.setText("▶️ Iniciar Captura LiDAR")
+        self.btn_capturar.setText("Iniciar Captura LiDAR")
         self.btn_capturar.setStyleSheet("")
         self.btn_capturar.setEnabled(True)
