@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
 from PyQt6.QtCore import QThread, pyqtSignal
 
 # ==============================================================================
-# 🧵 WORKER: COMPARACIÓN
+# WORKER: COMPARACION
 # ==============================================================================
 class WorkerComparacion(QThread):
     finished = pyqtSignal()
@@ -69,7 +69,7 @@ class WorkerComparacion(QThread):
         maxima = np.max(distancias)
         desv = np.std(distancias)
         
-        self.log_signal.emit(f"\n🔹 Estadísticas de {nombre}:")
+        self.log_signal.emit(f"\nEstadisticas de {nombre}:")
         self.log_signal.emit(f"   Promedio:    {prom*100:.2f} cm")
         self.log_signal.emit(f"   Mediana:     {med*100:.2f} cm")
         
@@ -91,7 +91,7 @@ class WorkerComparacion(QThread):
         vis.destroy_window()
 
 # ==============================================================================
-# 🖥️ PESTAÑA: COMPARACIÓN
+# PESTANA: COMPARACION
 # ==============================================================================
 class TabComparacion(QWidget):
     def __init__(self):

@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QPushButton,
 from PyQt6.QtCore import QThread, pyqtSignal
 
 # ==============================================================================
-# �� LÓGICA DE CAPTURA LIDAR (Integrada)
+# LOGICA DE CAPTURA LIDAR (Integrada)
 # ==============================================================================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SDK_DIR = os.path.dirname(SCRIPT_DIR)
@@ -151,7 +151,7 @@ def main_captura(stop_callback=None):
 
     # Verificar si se canceló la captura
     if stop_callback and stop_callback():
-        print("❌ Captura cancelada. No se procesarán ni guardarán los puntos.")
+        print("Captura cancelada. No se procesaran ni guardaran los puntos.")
         return
 
     if not all_points:
@@ -186,7 +186,7 @@ def main_captura(stop_callback=None):
     visualize_and_save_pcd(xyz, colors, save_dir, POINT_SIZE)
 
 # ==============================================================================
-# 🧵 WORKER: CAPTURA LIDAR
+# WORKER: CAPTURA LIDAR
 # ==============================================================================
 class CapturaOutputRedirector:
     """Redirige la salida de print() a una señal de Qt"""
@@ -263,7 +263,7 @@ class WorkerCaptura(QThread):
             self.finished.emit()
 
 # ==============================================================================
-# 🖥️ PESTAÑA: CAPTURA LIDAR
+# PESTANA: CAPTURA LIDAR
 # ==============================================================================
 class TabCaptura(QWidget):
     def __init__(self):

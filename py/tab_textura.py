@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
 from PyQt6.QtCore import QThread, pyqtSignal
 
 # ==============================================================================
-# 🧵 WORKER: TEXTURIZADO Y COMPARACIÓN
+# WORKER: TEXTURIZADO Y COMPARACION
 # ==============================================================================
 class WorkerTextura(QThread):
     log_signal = pyqtSignal(str)
@@ -28,7 +28,7 @@ class WorkerTextura(QThread):
             pcd1 = o3d.io.read_point_cloud(self.data['pcd1_path'])
             
             # Procesar nube 1
-            self.log_signal.emit("🔧 Procesando nube 1...")
+            self.log_signal.emit("Procesando nube 1...")
             mesh1 = self._procesar_nube_textura(
                 pcd1, 
                 self.data['img1_path'], 
@@ -44,7 +44,7 @@ class WorkerTextura(QThread):
                 pcd2 = o3d.io.read_point_cloud(self.data['pcd2_path'])
                 
                 # Procesar nube 2
-                self.log_signal.emit("🔧 Procesando nube 2...")
+                self.log_signal.emit("Procesando nube 2...")
                 mesh2 = self._procesar_nube_textura(
                     pcd2, 
                     self.data['img2_path'], 
@@ -52,7 +52,7 @@ class WorkerTextura(QThread):
                 )
                 
                 # Calcular espesor (distancias al origen)
-                self.log_signal.emit("📏 Calculando espesores...")
+                self.log_signal.emit("Calculando espesores...")
                 espesor_data = self._calcular_espesor(pcd1, pcd2)
                 
                 resultado = {
@@ -186,7 +186,7 @@ class WorkerTextura(QThread):
         }
 
 # ==============================================================================
-# 🖥️ PESTAÑA: TEXTURIZADO Y COMPARACIÓN
+# PESTANA: TEXTURIZADO Y COMPARACION
 # ==============================================================================
 class TabTextura(QWidget):
     def __init__(self):
@@ -391,11 +391,11 @@ class TabTextura(QWidget):
             # Mostrar estadísticas al estilo de tab_comparacion.py
             self.log_area.append("\nCalculando estadísticas...")
             
-            self.log_area.append("\n🔹 Estadísticas de ANTES:")
+            self.log_area.append("\nEstadisticas de ANTES:")
             self.log_area.append(f"   Promedio:    {espesor['prom1']:.2f} cm")
             self.log_area.append(f"   Mediana:     {espesor['med1']:.2f} cm")
             
-            self.log_area.append("\n🔹 Estadísticas de DESPUÉS:")
+            self.log_area.append("\nEstadisticas de DESPUES:")
             self.log_area.append(f"   Promedio:    {espesor['prom2']:.2f} cm")
             self.log_area.append(f"   Mediana:     {espesor['med2']:.2f} cm")
             

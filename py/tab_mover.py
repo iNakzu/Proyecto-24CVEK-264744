@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
 from PyQt6.QtCore import QThread, pyqtSignal
 
 # ==============================================================================
-# 🧵 WORKER PARA MOVER NUBE
+# WORKER PARA MOVER NUBE
 # ==============================================================================
 class WorkerMover(QThread):
     finished = pyqtSignal(dict)
@@ -63,8 +63,8 @@ class WorkerMover(QThread):
         factor_correccion = distancia_m_prueba / diferencia_prueba
         distancia_m_ajustada = distancia_m_prueba * factor_correccion
         
-        self.progress.emit(f"   📐 Factor de corrección calculado: {factor_correccion:.4f}")
-        self.progress.emit(f"   📏 Moviendo {distancia_m_ajustada*100:.2f} cm para lograr {distancia_cm:.2f} cm de diferencia")
+        self.progress.emit(f"   Factor de correccion calculado: {factor_correccion:.4f}")
+        self.progress.emit(f"   Moviendo {distancia_m_ajustada*100:.2f} cm para lograr {distancia_cm:.2f} cm de diferencia")
         
         # PASO 3: Aplicar el movimiento ajustado
         desplazamiento_final = direccion_promedio * distancia_m_ajustada
@@ -77,7 +77,7 @@ class WorkerMover(QThread):
         
         self.progress.emit(f"   Distancia radial promedio nueva: {distancia_promedio_nueva:.2f} cm")
         self.progress.emit(f"   Diferencia lograda: {diferencia_real:.2f} cm (objetivo: {distancia_cm:.2f} cm)")
-        self.progress.emit(f"   ✓ La nube mantiene su tamaño y forma (traslación rígida)")
+        self.progress.emit("   La nube mantiene su tamano y forma (traslacion rigida)")
         
         # Actualizar nube
         pcd.points = o3d.utility.Vector3dVector(nuevos_puntos)
@@ -98,7 +98,7 @@ class WorkerMover(QThread):
         }
 
 # ==============================================================================
-# 📦 TAB MOVER NUBE
+# TAB MOVER NUBE
 # ==============================================================================
 class TabMover(QWidget):
     def __init__(self):
@@ -223,4 +223,4 @@ class TabMover(QWidget):
             self.txt_consola.append(f"Archivo generado: {os.path.basename(resultado['ruta_salida'])}")
             self.txt_consola.append(f"Distancia original: {resultado['distancia_original']:.2f} cm")
             self.txt_consola.append(f"Distancia nueva: {resultado['distancia_nueva']:.2f} cm")
-            self.txt_consola.append(f"📏 Diferencia: {resultado['diferencia']:.2f} cm\n")
+            self.txt_consola.append(f"Diferencia: {resultado['diferencia']:.2f} cm\n")

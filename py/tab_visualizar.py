@@ -106,7 +106,7 @@ def visualizar_matplotlib_3d(archivo_antes, archivo_despues):
     print(f"Puntos DESPUÉS: {len(points_despues):,}")
     
     # CALCULAR DISTANCIAS PUNTO A PUNTO (espesor de shotcrete) - IGUAL QUE ETIQUETAS.PY
-    print(f"\n🔍 Calculando distancias punto a punto (espesor)...")
+    print("\nCalculando distancias punto a punto (espesor)...")
     distances = pcd_despues.compute_point_cloud_distance(pcd_antes)
     distances_np = np.asarray(distances)
     
@@ -115,7 +115,7 @@ def visualizar_matplotlib_3d(archivo_antes, archivo_despues):
     std_dist = np.std(distances_np)
     stderr_dist = std_dist / np.sqrt(len(distances_np))  # Error estándar
     
-    print(f"\n📈 Estadísticas de ESPESOR:")
+    print("\nEstadisticas de ESPESOR:")
     print(f"  Promedio:        {100 * mean_dist:.2f} cm")
     print(f"  Mínima:          {100 * np.min(distances_np):.2f} cm")
     print(f"  Máxima:          {100 * np.max(distances_np):.2f} cm")
@@ -127,7 +127,7 @@ def visualizar_matplotlib_3d(archivo_antes, archivo_despues):
     max_dist = np.max(distances_np)
     
     # Subsample para visualización más rápida
-    print("\n🔽 Reduciendo puntos para visualización...")
+    print("\nReduciendo puntos para visualizacion...")
     max_points = 50000
     
     if len(points_antes) > max_points:
@@ -151,7 +151,7 @@ def visualizar_matplotlib_3d(archivo_antes, archivo_despues):
     cmap = mcolors.LinearSegmentedColormap.from_list('custom_rainbow', colors_list, N=256)
     
     # Crear figura 3D ÚNICA (superpuestas)
-    print("\n🎨 Creando visualización 3D interactiva...")
+    print("\nCreando visualizacion 3D interactiva...")
     fig = plt.figure(figsize=(16, 12))
     ax = fig.add_subplot(111, projection='3d')
     
@@ -225,7 +225,7 @@ def visualizar_matplotlib_3d(archivo_antes, archivo_despues):
              bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
     
     print("\n" + "="*60)
-    print("✅ VISUALIZACIÓN LISTA")
+    print("VISUALIZACION LISTA")
     print("="*60)
     print("\nControles:")
     print("  • Click + arrastrar: Rotar vista")
@@ -249,7 +249,7 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
         print(f"ERROR: No se encontró el archivo {archivo_despues}")
         return
     
-    print(f"\n📏 MODO: Visualización con grid milimetrado desde origen (eje X del sensor)")
+    print("\nMODO: Visualizacion con grid milimetrado desde origen (eje X del sensor)")
     print(f"\nCargando {archivo_antes}...")
     pcd_antes = o3d.io.read_point_cloud(archivo_antes)
     points_antes = np.asarray(pcd_antes.points)
@@ -261,13 +261,13 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
     print(f"Puntos DESPUÉS: {len(points_despues):,}")
     
     # Calcular distancias (espesor)
-    print(f"\n🔍 Calculando espesores...")
+    print("\nCalculando espesores...")
     distances = pcd_despues.compute_point_cloud_distance(pcd_antes)
     distances_np = np.asarray(distances)
     
     # Estadísticas
     mean_dist = np.mean(distances_np)
-    print(f"\n📊 Espesor promedio: {mean_dist*100:.2f} cm")
+    print(f"\nEspesor promedio: {mean_dist*100:.2f} cm")
     print(f"   Rango: {np.min(distances_np)*100:.2f} cm - {np.max(distances_np)*100:.2f} cm")
     
     # Convertir todo a centímetros para visualización
@@ -288,7 +288,7 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
         distances_vis = distances_np
     
     # Crear figura (reducida para mejor rendimiento)
-    print("\n🎨 Creando visualización optimizada...")
+    print("\nCreando visualizacion optimizada...")
     fig = plt.figure(figsize=(14, 10))
     ax = fig.add_subplot(111, projection='3d')
     
@@ -364,7 +364,7 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
     z_grid = np.concatenate([np.arange(0, z_min - grid_spacing, -grid_spacing), z_grid])
     
     # Solo grid principal en plano YZ (X=0) - perpendicular al sensor
-    print("\n📐 Dibujando grid simplificado en plano YZ (cada 10cm)...")
+    print("\nDibujando grid simplificado en plano YZ (cada 10cm)...")
     
     # Líneas horizontales (Z constante)
     for z in z_grid:
@@ -412,21 +412,21 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
     dim_z = z_max - z_min
     
     # Información con medidas físicas
-    info_text = f"""📏 REFERENCIA: ORIGEN (0,0,0) = SENSOR
+    info_text = f"""REFERENCIA: ORIGEN (0,0,0) = SENSOR
 
-📐 DIMENSIONES:
-• Eje X: {x_min:.0f} a {x_max:.0f} cm ({dim_x:.0f} cm)
-• Eje Y: {y_min:.0f} a {y_max:.0f} cm ({dim_y:.0f} cm)
-• Eje Z: {z_min:.0f} a {z_max:.0f} cm ({dim_z:.0f} cm)
+DIMENSIONES:
+- Eje X: {x_min:.0f} a {x_max:.0f} cm ({dim_x:.0f} cm)
+- Eje Y: {y_min:.0f} a {y_max:.0f} cm ({dim_y:.0f} cm)
+- Eje Z: {z_min:.0f} a {z_max:.0f} cm ({dim_z:.0f} cm)
 
-📊 ESPESOR SHOTCRETE:
-• Promedio: {mean_dist*100:.2f} cm
-• Mínimo: {np.min(distances_np)*100:.2f} cm
-• Máximo: {np.max(distances_np)*100:.2f} cm
+ESPESOR SHOTCRETE:
+- Promedio: {mean_dist*100:.2f} cm
+- Minimo: {np.min(distances_np)*100:.2f} cm
+- Maximo: {np.max(distances_np)*100:.2f} cm
 
-🔷 GRID MÉTRICO:
-• Líneas: cada 10 cm
-• Marcas en ejes: cada 10 cm
+GRID METRICO:
+- Lineas: cada 10 cm
+- Marcas en ejes: cada 10 cm
 """
     fig.text(0.02, 0.98, info_text, 
              fontsize=9, 
@@ -435,9 +435,9 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
              bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.95))
     
     print("\n" + "="*70)
-    print("✅ VISUALIZACIÓN OPTIMIZADA LISTA")
+    print("VISUALIZACION OPTIMIZADA LISTA")
     print("="*70)
-    print("\n📏 Características:")
+    print("\nCaracteristicas:")
     print(f"  • Grid simplificado: líneas cada 10 cm")
     print(f"  • Puntos optimizados: {len(points_despues_cm):,} puntos")
     print(f"  • Origen (0,0,0) = Posición del sensor")
@@ -445,7 +445,7 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
     print(f"  • Rango X: {x_min:.0f} a {x_max:.0f} cm")
     print(f"  • Rango Y: {y_min:.0f} a {y_max:.0f} cm")
     print(f"  • Rango Z: {z_min:.0f} a {z_max:.0f} cm")
-    print("\n🎮 Controles:")
+    print("\nControles:")
     print("  • Click + arrastrar: Rotar vista")
     print("  • Scroll: Zoom")
     print("  • Botón derecho: Mover")
@@ -455,7 +455,7 @@ def visualizar_con_grid_metrico(archivo_antes, archivo_despues):
     plt.show()
 
 # ==============================================================================
-# 🧵 WORKER: VISUALIZACIÓN
+# WORKER: VISUALIZACION
 # ==============================================================================
 class WorkerVisualizacion(QThread):
     finished = pyqtSignal()
@@ -490,7 +490,7 @@ class WorkerVisualizacion(QThread):
             self.finished.emit()
 
 # ==============================================================================
-# 📋 TAB VISUALIZACIÓN
+# TAB VISUALIZACION
 # ==============================================================================
 class TabVisualizacion(QWidget):
     def __init__(self):
@@ -584,7 +584,7 @@ class TabVisualizacion(QWidget):
         if ruta:
             self.ruta_archivo1 = ruta
             self.label_archivo1.setText(os.path.basename(ruta))
-            self.log.append(f"✅ Archivo 1: {ruta}")
+            self.log.append(f"OK Archivo 1: {ruta}")
     
     def seleccionar_archivo2(self):
         ruta, _ = QFileDialog.getOpenFileName(
@@ -593,7 +593,7 @@ class TabVisualizacion(QWidget):
         if ruta:
             self.ruta_archivo2 = ruta
             self.label_archivo2.setText(os.path.basename(ruta))
-            self.log.append(f"✅ Archivo 2: {ruta}")
+            self.log.append(f"OK Archivo 2: {ruta}")
     
     def actualizar_requerimientos(self):
         modo = self.combo_modo.currentIndex() + 1
@@ -607,34 +607,34 @@ class TabVisualizacion(QWidget):
         
         # Validar archivos
         if not self.ruta_archivo1:
-            self.log.append("❌ Error: Debes seleccionar el Archivo 1")
+            self.log.append("ERROR: Debes seleccionar el Archivo 1")
             return
         
         if modo > 1 and not self.ruta_archivo2:
-            self.log.append("❌ Error: Este modo requiere dos archivos")
+            self.log.append("ERROR: Este modo requiere dos archivos")
             return
         
         # Deshabilitar botón
         self.btn_visualizar.setEnabled(False)
         self.log.clear()
-        self.log.append(f"🚀 Iniciando visualización (modo {modo})...")
+        self.log.append(f"Iniciando visualizacion (modo {modo})...")
         
         # Matplotlib (modos 3 y 4) debe ejecutarse en el hilo principal
         if modo in [3, 4]:
             try:
                 if modo == 3:
-                    self.log.append(f"📂 Generando mapa de calor 3D...")
+                    self.log.append("Generando mapa de calor 3D...")
                     visualizar_matplotlib_3d(self.ruta_archivo1, self.ruta_archivo2)
                 elif modo == 4:
-                    self.log.append(f"📂 Generando visualización con grid métrico...")
+                    self.log.append("Generando visualizacion con grid metrico...")
                     visualizar_con_grid_metrico(self.ruta_archivo1, self.ruta_archivo2)
                 
-                self.log.append("✅ Visualización completada")
+                self.log.append("Visualizacion completada")
             except Exception as e:
-                self.log.append(f"❌ Error: {str(e)}")
+                self.log.append(f"ERROR: {str(e)}")
             finally:
                 self.btn_visualizar.setEnabled(True)
-                self.log.append("\n✅ Proceso completado")
+                self.log.append("\nProceso completado")
         else:
             # Open3D (modos 1 y 2) puede usar worker thread
             point_size = self.spin_point_size.value()
@@ -650,7 +650,7 @@ class TabVisualizacion(QWidget):
     
     def on_visualizacion_finished(self):
         self.btn_visualizar.setEnabled(True)
-        self.log.append("\n✅ Proceso completado")
+        self.log.append("\nProceso completado")
 
 def main():
     print("=" * 60)

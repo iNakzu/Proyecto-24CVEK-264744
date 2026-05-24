@@ -9,7 +9,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QImage, QPixmap
 
 # ==============================================================================
-# 📐 EDITOR DE CORTE 2D MEJORADO CON MÚLTIPLES HERRAMIENTAS
+# EDITOR DE CORTE 2D MEJORADO CON MULTIPLES HERRAMIENTAS
 # ==============================================================================
 class EditorLibre:
     def __init__(self, ruta_imagen):
@@ -564,7 +564,7 @@ class EditorLibre:
         self.action = None
 
 # ==============================================================================
-# 🔧 LÓGICA DE CORTE 3D
+# LOGICA DE CORTE 3D
 # ==============================================================================
 class Logic3D:
     @staticmethod
@@ -623,7 +623,7 @@ class Logic3D:
         return pcd.select_by_index(np.where(mask)[0])
 
 # ==============================================================================
-# 🖥️ PESTAÑA: HERRAMIENTAS DE CORTE (3D + 2D)
+# PESTANA: HERRAMIENTAS DE CORTE (3D + 2D)
 # ==============================================================================
 class TabCorte(QWidget):
     archivos_generados = pyqtSignal(object)
@@ -639,7 +639,7 @@ class TabCorte(QWidget):
     def init_ui(self):
         layout = QHBoxLayout(self)
         
-        grp_3d = QGroupBox("🛠️ Corte de Nube de Puntos (3D)")
+        grp_3d = QGroupBox("Corte de Nube de Puntos (3D)")
         l_3d = QVBoxLayout()
         
         l_conf = QHBoxLayout()
@@ -725,7 +725,7 @@ class TabCorte(QWidget):
                     pcd_recorte = Logic3D.aplicar_corte(pcd, coord)
                     saved = self._guardar_pcd(pcd_recorte, f, dims)
                     self.archivo_ref_path = saved
-                    self.lbl_saved_file.setText(f"📁 Guardado en:\n{saved}")
+                    self.lbl_saved_file.setText(f"Guardado en:\n{saved}")
                     
                     # Preguntar si quiere visualizar
                     if QMessageBox.question(self, "Visualizar", "¿Deseas visualizar la región recortada?") == QMessageBox.StandardButton.Yes:
@@ -742,7 +742,7 @@ class TabCorte(QWidget):
         self.lbl_saved_file.clear()
         dims = self.coordenadas_corte['dimensiones_cm']
         archivos_procesados = []
-        saved_paths_text = "📁 Archivos guardados:\n"
+        saved_paths_text = "Archivos guardados:\n"
         
         for f in files:
             try:
@@ -751,13 +751,13 @@ class TabCorte(QWidget):
                 
                 if len(recorte.points) > 0:
                     saved_path = self._guardar_pcd(recorte, f, dims)
-                    self.list_results.addItem(f"✅ {os.path.basename(saved_path)}")
+                    self.list_results.addItem(f"OK: {os.path.basename(saved_path)}")
                     archivos_procesados.append(saved_path)
                     saved_paths_text += f"{saved_path}\n"
                 else:
-                    self.list_results.addItem(f"⚠ {os.path.basename(f)} (Vacío)")
+                    self.list_results.addItem(f"AVISO: {os.path.basename(f)} (Vacio)")
             except Exception as e:
-                self.list_results.addItem(f"❌ Error en {os.path.basename(f)}")
+                self.list_results.addItem(f"ERROR en {os.path.basename(f)}")
         
         if self.archivo_ref_path and archivos_procesados:
             resultados = {'ref': self.archivo_ref_path, 'targets': archivos_procesados}

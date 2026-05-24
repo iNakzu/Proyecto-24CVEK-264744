@@ -11,7 +11,7 @@ from tab_textura import TabTextura
 from tab_visualizar import TabVisualizacion
 
 # ==============================================================================
-# 📡 REDIRECTOR DE SALIDA
+# REDIRECTOR DE SALIDA
 # ==============================================================================
 class StreamRedirector(QObject):
     text_written = pyqtSignal(str)
@@ -21,7 +21,7 @@ class StreamRedirector(QObject):
         pass
 
 # ==============================================================================
-# 🪟 VENTANA PRINCIPAL
+# VENTANA PRINCIPAL
 # ==============================================================================
 class VentanaPrincipal(QMainWindow):
     def __init__(self):
@@ -45,12 +45,12 @@ class VentanaPrincipal(QMainWindow):
         self.tab_visualizar = TabVisualizacion()
         
         # Agregar pestañas a la interfaz
-        self.tabs.addTab(self.tab_captura, "📡 0. Capturar LiDAR")
-        self.tabs.addTab(self.tab_corte, "✂️ 1. Cortar Nubes (3D/2D)")
-        self.tabs.addTab(self.tab_comparacion, "📊 2. Comparar Nubes")
-        self.tabs.addTab(self.tab_mover, "🚀 3. Mover Nube")
-        self.tabs.addTab(self.tab_textura, "🎨 4. Texturizar")
-        self.tabs.addTab(self.tab_visualizar, "👁️ 5. Visualizar")
+        self.tabs.addTab(self.tab_captura, "0. Capturar LiDAR")
+        self.tabs.addTab(self.tab_corte, "1. Cortar Nubes (3D/2D)")
+        self.tabs.addTab(self.tab_comparacion, "2. Comparar Nubes")
+        self.tabs.addTab(self.tab_mover, "3. Mover Nube")
+        self.tabs.addTab(self.tab_textura, "4. Texturizar")
+        self.tabs.addTab(self.tab_visualizar, "5. Visualizar")
 
         # Conexión automática entre pestañas
         self.tab_corte.archivos_generados.connect(self.transferir_archivos)
@@ -67,7 +67,7 @@ class VentanaPrincipal(QMainWindow):
         rutas_targets_cortadas = datos['targets']
 
         if ruta_ref_cortada and len(rutas_targets_cortadas) > 0:
-            print("\n🔄 Transfiriendo archivos automáticamente a la pestaña de comparación...")
+            print("\nTransfiriendo archivos automáticamente a la pestaña de comparación...")
             
             self.tab_comparacion.cargar_nube_1(ruta_ref_cortada)
             self.tab_comparacion.cargar_nube_2(rutas_targets_cortadas[0])
