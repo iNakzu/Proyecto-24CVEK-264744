@@ -31,23 +31,39 @@ DIR_X = 1
 DIR_Y = 0
 DIR_Z = 0
 
+def resolve_lidar_executable():
+    candidates = [BIN_PATH]
+    if os.name == "nt":
+        candidates.insert(0, f"{BIN_PATH}.exe")
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    return None
+
 def run_lidar_and_collect_points(duration_sec, stop_callback=None):
     """Lanza el binario del LiDAR y devuelve una lista de puntos."""
-    if not os.path.isfile(BIN_PATH):
-        print(f"ERROR: no se encontró el ejecutable en: {BIN_PATH}")
+    exe_path = resolve_lidar_executable()
+    if not exe_path:
+        print(f"ERROR: no se encontró el ejecutable en: {BIN_PATH} (.exe en Windows)")
         return []
 
     point_pattern = re.compile(REGEX_POINT)
     all_points = []
     print(f"Acumulando puntos durante {duration_sec} segundos...")
 
-    process = subprocess.Popen(
-        [BIN_PATH],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1
-    )
+    try:
+        process = subprocess.Popen(
+            [exe_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1
+        )
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 193:
+            print("ERROR: el binario no es compatible con Windows. Usa una version .exe o ejecutalo via WSL.")
+            return []
+        raise
 
     def terminate_process():
         try:
