@@ -82,11 +82,18 @@ class WorkerComparacion(QThread):
         n2.paint_uniform_color([1.0, 0.0, 0.0])
         
         vis = o3d.visualization.Visualizer()
-        vis.create_window(window_name="Comparación: Negro(Antes) vs Rojo(Después)")
+        if not vis.create_window(window_name="Comparación: Negro(Antes) vs Rojo(Después)"):
+            self.log_signal.emit("No se pudo crear la ventana de visualizacion OpenGL.")
+            return
         vis.add_geometry(n1)
         vis.add_geometry(n2)
-        vis.get_render_option().background_color = np.asarray([1.0, 1.0, 1.0])
-        vis.get_render_option().point_size = 2.0
+        render_option = vis.get_render_option()
+        if render_option is None:
+            self.log_signal.emit("No se pudo obtener las opciones de renderizado.")
+            vis.destroy_window()
+            return
+        render_option.background_color = np.asarray([1.0, 1.0, 1.0])
+        render_option.point_size = 2.0
         vis.run()
         vis.destroy_window()
 
